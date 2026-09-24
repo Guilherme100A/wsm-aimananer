@@ -18,3 +18,6 @@ export * from './proxy'
 
 // T05 — sessões (máquina de estados, SessionStore)
 export * from './session'
+
+// T14 — grupos (listagem via fetchGroups, SessionNotConnectedError)
+export * from './groups'
