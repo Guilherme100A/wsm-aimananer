@@ -145,6 +145,17 @@ function acceptanceIds(taskId) {
 
 function startInfra(report, task) {
   if (!task.infra) return
+  // Máquina sem Docker daemon: usa Postgres/Redis nativos (spec/INFRA.md).
+  const local = process.env.WSM_INFRA === 'local' || (process.env.WSM_INFRA !== 'docker' && run('docker info', { quiet: true }).code !== 0)
+  if (local) {
+    if (task.infra === 'full') {
+      report.add('infra: docker compose up -d --wait', 'fail', 'sem Docker daemon nesta máquina (spec/INFRA.md)')
+      return
+    }
+    const r = run(`node "${join(SPEC_DIR, 'verify', 'infra-local.mjs')}"`)
+    report.add('infra: local (postgres:5432, redis:6379)', r.code === 0 ? 'pass' : 'fail', r.code === 0 ? '' : r.tail.slice(-200))
+    return
+  }
   const cmd = task.infra === 'full' ? 'docker compose up -d --wait' : 'docker compose up -d --wait postgres redis'
   const r = run(cmd)
   report.add(`infra: ${cmd}`, r.code === 0 ? 'pass' : 'fail', r.code === 0 ? '' : `exit ${r.code}`)
