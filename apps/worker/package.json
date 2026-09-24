@@ -14,6 +14,10 @@
   "dependencies": {
     "@wsm/core": "workspace:*",
     "@wsm/db": "workspace:*",
-    "drizzle-orm": "^0.45.3"
+    "drizzle-orm": "^0.45.3",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6"
   }
 }

@@ -10,3 +10,6 @@ export * from './optout'
 
 // T06 — monitor de proxies (verificador periódico, evento proxy_unavailable)
 export * from './proxy'
+
+// T05 — Session Manager (SessionManager, factories de transporte)
+export * from './sessions'

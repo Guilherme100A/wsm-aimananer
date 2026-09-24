@@ -15,3 +15,6 @@ export * from './contacts'
 
 // T06 — proxies (ProxyService, createProxyChecker, resolveSessionProxy, connectSession)
 export * from './proxy'
+
+// T05 — sessões (máquina de estados, SessionStore)
+export * from './session'

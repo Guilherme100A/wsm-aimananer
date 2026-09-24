@@ -5,9 +5,11 @@ import type { AppDeps, AppEnv } from '../types'
 import { healthRoutes } from './health'
 import { contactsRoutes } from './contacts'
 import { proxiesRoutes } from './proxies'
+import { sessionsRoutes } from './sessions'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', healthRoutes(deps))
   app.route('/', contactsRoutes(deps))
   app.route('/', proxiesRoutes(deps))
+  app.route('/', sessionsRoutes(deps))
 }
