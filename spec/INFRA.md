@@ -1,21 +1,76 @@
-# INFRA (atualizado 2026-09-24: Docker instalado)
+# INFRA
 
-> **Atual:** o humano instalou o Docker Desktop (engine 29.8, WSL2, ~8 GB para a VM). O `verify.mjs` detecta o daemon e usa `docker compose up -d --wait postgres redis` (ou o compose completo com infra=full). As URLs continuam as mesmas: postgres://wsm:wsm@localhost:5432/wsm e redis://localhost:6379. O Postgres e o Redis nativos ficam **parados** para não disputar as portas; o modo local continua disponível com WSM_INFRA=local. O AC-T16-01 e o AC-T16-05 deixam de estar BLOQUEADOS.
+> **Atualizado em 2026-09-24 — Docker Desktop instalado.**
 
-> **Use 127.0.0.1, não localhost:** as portas do compose ouvem só em IPv4 local (T17), e no Windows `localhost` tenta `::1` primeiro: o libpq (psql) perde ~2 s por conexão. O verify.mjs já exporta DATABASE_URL/REDIS_URL com 127.0.0.1.
+O ambiente atual utiliza Docker Desktop com engine 29.8 e WSL2, com aproximadamente 8 GB destinados à VM.
 
-## Histórico: infra local (sem Docker)
+O `verify.mjs` detecta o daemon Docker e utiliza:
 
-A máquina de desenvolvimento é Windows sem Docker daemon nem WSL. Para rodar os testes:
+```text
+docker compose up -d --wait postgres redis
+```
 
-| Serviço | Onde | Conexão |
-|---|---|---|
-| PostgreSQL 16.4 (binários nativos) | `C:/Users/green/tools/pg` · dados em `C:/Users/green/tools/pgdata` | `postgres://wsm:wsm@localhost:5432/wsm` |
-| Redis 8.10 (build nativo) | `C:/Users/green/tools/redis` | `redis://localhost:6379` |
-| docker CLI + compose v5 (sem daemon) | no PATH | serve só para `docker compose config` |
+ou o compose completo quando `infra=full`.
 
-- Usuário `wsm` é superusuário do Postgres: testes podem criar bancos descartáveis (`CREATE DATABASE wsm_test_<rand>`).
-- Suba/verifique a infra com `node spec/verify/infra-local.mjs` (idempotente).
-- `verify.mjs` com `WSM_INFRA=local` (default quando `docker info` falha) **não** roda `docker compose up`: só confere que as portas 5432 e 6379 respondem.
-- Variáveis de ambiente para testes: `DATABASE_URL`, `REDIS_URL` com os valores acima (use-os como default nos helpers quando não definidos).
-- AC-T16-01 (`docker compose up --wait`) não é executável nesta máquina: fica BLOCKED até haver Docker.
+## Conexões
+
+As URLs utilizadas são:
+
+```text
+postgres://wsm:wsm@127.0.0.1:5432/wsm
+redis://127.0.0.1:6379
+```
+
+O Postgres e Redis nativos ficam parados para evitar disputa pelas portas.
+
+O modo de infraestrutura local continua disponível através de:
+
+```text
+WSM_INFRA=local
+```
+
+## Regra de endereço
+
+**Use `127.0.0.1`, não `localhost`.**
+
+As portas do compose ficam disponíveis apenas em IPv4 local. No Windows, `localhost` pode tentar `::1` primeiro, causando aproximadamente 2 segundos adicionais por conexão no libpq.
+
+O `verify.mjs` já exporta `DATABASE_URL` e `REDIS_URL` utilizando `127.0.0.1`.
+
+## Execução dos testes
+
+Suba a infraestrutura Docker com:
+
+```text
+docker compose up -d --wait postgres redis
+```
+
+Depois execute as suítes individualmente:
+
+```text
+node spec/verify/verify.mjs <Tarefa> --role operario
+node spec/verify/verify.mjs <Tarefa> --role tester
+```
+
+As suítes devem ser executadas **uma por vez**, principalmente as que utilizam Postgres, Redis ou compartilham build.
+
+O `verify.mjs` já configura:
+
+* `VITEST_MAX_WORKERS=4`;
+* pnpm com um pacote por vez;
+* `DATABASE_URL` utilizando `127.0.0.1`;
+* `REDIS_URL` utilizando `127.0.0.1`.
+
+As suítes de dashboard (T12, T18-T22) compartilham o build e devem ser executadas por um agente por vez.
+
+## Infraestrutura local
+
+O modo `WSM_INFRA=local` continua disponível para desenvolvimento e testes locais quando necessário.
+
+Nesse modo, o projeto utiliza os serviços locais configurados pela máquina em vez do compose Docker.
+
+## Estado dos ACs
+
+Com o Docker Desktop disponível, os ACs que dependiam de Docker podem ser executados normalmente.
+
+O AC-T16-01 e o AC-T16-05 **não estão mais bloqueados por infraestrutura**.
