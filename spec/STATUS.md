@@ -26,6 +26,7 @@
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · infra · Humano instalou o Docker. O verify passa a usar docker compose (postgres/redis em containers), e os serviços nativos ficam parados. O AC-T16-01/05 foi desbloqueado. Retomada: o Cinzel revisa a corrida residual do T08 (nota da Radar) antes do verify. · Humano/Orquestrador
 - 2026-09-24 · infra · Postgres local caiu várias vezes por falta de memória (commit ~2 GB livre) com 3 suítes em paralelo. Regra: rodar verify/testes com banco UM DE CADA VEZ. · Orquestrador
 - 2026-09-24 · pausa · Humano fechou o Maestri ~02:35. Próximo: re-verificar T08 (tester e operário, serializado), commitar T08 (código na working tree, não commitado), despachar T09 e T15. · Orquestrador
 - 2026-09-24 · T08 · Decisões aceitas: DEGRADED segura envios (3.4); cancel de mensagem inexistente→404 NOT_FOUND (lacuna 3.4). Risco p/ T16: worker que cai no meio do envio deixa mensagem em processing (sem reenvio para evitar duplicata). · Orquestrador

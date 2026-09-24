@@ -1,4 +1,8 @@
-# INFRA local (decisão do Orquestrador, 2026-09-24)
+# INFRA (atualizado 2026-09-24: Docker instalado)
+
+> **Atual:** o humano instalou o Docker Desktop (engine 29.8, WSL2, ~8 GB para a VM). O `verify.mjs` detecta o daemon e usa `docker compose up -d --wait postgres redis` (ou o compose completo com infra=full). As URLs continuam as mesmas: postgres://wsm:wsm@localhost:5432/wsm e redis://localhost:6379. O Postgres e o Redis nativos ficam **parados** para não disputar as portas; o modo local continua disponível com WSM_INFRA=local. O AC-T16-01 e o AC-T16-05 deixam de estar BLOQUEADOS.
+
+## Histórico: infra local (sem Docker)
 
 A máquina de desenvolvimento é Windows sem Docker daemon nem WSL. Para rodar os testes:
 
