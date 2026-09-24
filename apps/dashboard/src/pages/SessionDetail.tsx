@@ -1,6 +1,7 @@
 // Detalhe da sessão (AC-T12-05): card da seção 12 da nota + gráficos agregados no cliente.
 import { useEffect, useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { SessionProxyPanel } from '../components/SessionProxyPanel'
 import { ChartBox, ErrorText, StateIndicator } from '../components/ui'
 import { appendSample, bucketMessages, formatDateTime, latencySeries, parsePrometheusLatency, timeLabel } from '../lib/aggregate'
 import { api } from '../lib/api'
@@ -144,6 +145,8 @@ export function SessionDetail({ id }: { id: string }) {
           Último evento: {formatDateTime(h?.lastEventAt ?? null)} · 403: {h?.forbidden403 ?? 0}. O Health Score é apenas um indicador operacional.
         </p>
       </section>
+
+      {s ? <SessionProxyPanel session={s} onChanged={() => session.reload()} /> : null}
 
       {showLogs ? <Logs messages={msgs} /> : null}
 

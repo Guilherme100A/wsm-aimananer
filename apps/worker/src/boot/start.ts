@@ -7,7 +7,7 @@ import { Queue } from 'bullmq'
 import { Redis } from 'ioredis'
 import {
   AiAssistant,
-  aiConfigFromEnv,
+  AiSettingsService,
   AlertDispatcher,
   attachMetrics,
   bindTransportSession,
@@ -190,7 +190,14 @@ export async function startWorker(opts: StartWorkerOptions = {}): Promise<Worker
     const ai = attachAi(manager, {
       db,
       logger,
-      assistant: new AiAssistant({ provider: createAiProvider(env.AI_PROVIDER_API_KEY), config: aiConfigFromEnv(env), logger }),
+      // T19 — configuração dinâmica: tabela ai_settings (painel) com fallback no ambiente AI_*, relida a cada
+      // AI_SETTINGS_REFRESH_MS (default 5 s) sem restart. Sem chave ou enabled=false → só o fallback determinístico.
+      assistant: new AiAssistant({
+        settings: new AiSettingsService({ db, env }),
+        providerFactory: createAiProvider,
+        refreshMs: aiRefreshMs(env),
+        logger,
+      }),
     })
     onStop('ai', async () => {
       ai.stop()
@@ -270,3 +277,9 @@ async function resumeQueues(db: Database, queue: MessageQueue, logger: Logger): 
 }
 
 const counts = (r: ReconcileResult) => ({ sent: r.sent.length, retrying: r.retrying.length, failed: r.failed.length })
+
+/** AI_SETTINGS_REFRESH_MS: validade da configuração de IA lida do banco (default 5000; mínimo 0). */
+export function aiRefreshMs(env: Record<string, string | undefined>): number {
+  const n = Number(env.AI_SETTINGS_REFRESH_MS)
+  return env.AI_SETTINGS_REFRESH_MS?.trim() && Number.isFinite(n) && n >= 0 ? n : 5000
+}

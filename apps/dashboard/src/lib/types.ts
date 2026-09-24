@@ -10,6 +10,8 @@ export interface Session {
   status: SessionState
   state: SessionState
   proxyId: string | null
+  /** Proxy da sessão (T17). A senha nunca vem na resposta. */
+  proxy?: SessionProxy | null
   note: string | null
   requiresRestart: boolean
   warmupStartedAt: string | null
@@ -62,19 +64,27 @@ export interface MessageEvent {
   createdAt: string
 }
 
-export interface Proxy {
+export type ProxyProtocol = 'http' | 'https' | 'socks5'
+
+/** Proxy embutido na view da sessão (AC-T17-05). */
+export interface SessionProxy {
   id: string
-  name: string | null
-  protocol: string
+  protocol: ProxyProtocol
   host: string
   port: number
   username: string | null
-  url: string
-  available: boolean
-  lastCheckAt: string | null
-  lastError: string | null
-  errorCount: number
-  sessionId: string | null
+  hasPassword: boolean
+}
+
+export interface AuthUser {
+  username: string
+  role: string
+}
+
+export interface LoginResult {
+  token: string
+  expiresAt: string
+  user: AuthUser
 }
 
 export interface Contact {

@@ -1,4 +1,4 @@
-// AC-T12-06: páginas Proxies, Contatos (com import CSV), Grupos e Alertas/Webhooks.
+// AC-T12-06: páginas Contatos (com import CSV), Grupos e Alertas/Webhooks (Proxies saiu da navegação no T18).
 import { randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { api, connectedSession, go, hashOf, tid, useDashboard } from './shared'
@@ -8,10 +8,10 @@ const phone = () => `+55119${String(Math.floor(Math.random() * 1e8)).padStart(8,
 describe('T12 — páginas', () => {
   const ctx = useDashboard()
 
-  it('AC-T12-06 navegação leva às 4 páginas com seus títulos', async () => {
+  // T18 (AC-T18-03) tirou a página Proxies da navegação: o proxy é configurado na própria sessão.
+  it('AC-T12-06 navegação leva às páginas Contatos, Grupos e Alertas/Webhooks com seus títulos', async () => {
     const page = await ctx.newPage()
     const pages: Array<[string, string, string, string]> = [
-      ['nav-proxies', '#/proxies', 'page-proxies', 'Proxies'],
       ['nav-contacts', '#/contacts', 'page-contacts', 'Contatos'],
       ['nav-groups', '#/groups', 'page-groups', 'Grupos'],
       ['nav-alerts', '#/alerts', 'page-alerts', 'Alertas / Webhooks'],
@@ -22,17 +22,6 @@ describe('T12 — páginas', () => {
       await page.locator(tid(pageId)).waitFor({ state: 'visible' })
       expect(((await page.locator(`${tid(pageId)} h1, h1`).first().textContent()) ?? '').trim()).toBe(title)
     }
-  })
-
-  it('AC-T12-06 Proxies lista os proxies com a senha mascarada', async () => {
-    const pass = `pw${randomBytes(6).toString('hex')}`
-    const res = await api(ctx, 'POST', '/api/proxies', { url: `http://usuario:${pass}@127.0.0.1:18090`, name: 'proxy-lista' })
-    expect(res.status, res.text).toBe(201)
-    const page = await ctx.newPage()
-    await go(ctx, page, '/proxies')
-    const el = page.locator(tid('page-proxies'))
-    await expect.poll(async () => (await el.textContent()) ?? '', { timeout: 15_000 }).toContain('127.0.0.1')
-    expect((await el.textContent()) ?? '', 'senha do proxy exibida').not.toContain(pass)
   })
 
   it('AC-T12-06 Contatos: import CSV pelo arquivo mostra o resultado e os contatos aparecem na lista', async () => {

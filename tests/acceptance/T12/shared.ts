@@ -2,12 +2,12 @@
 // dashboard servidos por um servidor Node na MESMA origem (/api, /metrics e /health → app.fetch; o resto →
 // apps/dashboard/dist com fallback para index.html). Browser: chromium headless do Playwright.
 // Contrato combinado com o Operário (T12):
-//   rotas hash (#/login, #/, #/sessions, #/sessions/new, #/sessions/<id>, #/proxies, #/contacts, #/groups, #/alerts);
-//   token em sessionStorage 'wsm.token'; data-testids login-*, nav-*, card-* (filho card-value), session-row/
+//   rotas hash (#/login, #/, #/sessions, #/sessions/new, #/sessions/<id>, #/contacts, #/groups, #/alerts);
+//   login usuário/senha (T18: login-username/login-password, POST /api/auth/login); token em sessionStorage 'wsm.token'; data-testids login-*, nav-*, card-* (filho card-value), session-row/
 //   session-state/session-link, add-session, new-*, gen-qr/gen-pairing, qr-image/pairing-code/auth-connected/
 //   session-open/auth-error, session-card/detail-*, btn-pause|btn-resume/btn-restart/btn-logs/logs-panel, chart-*,
 //   page-*, csv-*, groups-session/group-row, webhook-*; estado vazio = 'Sem dados'.
-import '../T05/env'
+import { ADMIN_PASSWORD, ADMIN_USERNAME } from './env'
 import { randomBytes } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import http from 'node:http'
@@ -211,9 +211,13 @@ export const tid = (id: string) => `[data-testid="${id}"]`
 
 export const hashOf = (page: any) => page.evaluate(() => location.hash)
 
-export async function doLogin(ctx: DCtx, page: any, token = ctx.token) {
+export { ADMIN_PASSWORD, ADMIN_USERNAME }
+
+/** Login do painel com usuário/senha (T18 substitui o login por token do AC-T12-01). */
+export async function doLogin(ctx: DCtx, page: any, username = ADMIN_USERNAME, password = ADMIN_PASSWORD) {
   await page.goto(`${ctx.base}/#/login`)
-  await page.locator(tid('login-token')).fill(token)
+  await page.locator(tid('login-username')).fill(username)
+  await page.locator(tid('login-password')).fill(password)
   await page.locator(tid('login-submit')).click()
   await expect.poll(() => hashOf(page), { timeout: 15_000, message: 'login não saiu de #/login' }).not.toMatch(/^#\/login/)
 }

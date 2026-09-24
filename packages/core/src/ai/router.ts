@@ -3,7 +3,8 @@
 // Erro/timeout do provedor → fallback determinístico. `suggest` nunca lança.
 import { resolveAiConfig, type AiConfig } from './config'
 import { fallbackClassify, FALLBACK_MODEL, type Classification } from './fallback'
-import type { AiProvider } from './provider'
+import { createAiProvider, type AiProvider } from './provider'
+import type { AiProviderFactory, ResolvedAiSettings } from './settings'
 import { hashAiText } from './text'
 
 export type SuggestionSource = 'provider' | 'cache' | 'fallback'
@@ -24,6 +25,24 @@ export interface AiAssistantOptions {
   logger?: AiLogger
   /** Máximo de entradas no cache (LRU simples). Default 1000. */
   cacheSize?: number
+  /**
+   * T19 — fonte dinâmica de configuração (ex.: AiSettingsService: banco com fallback no ambiente).
+   * Com ela, `provider` e `config` iniciais são ignorados: o assistente relê a fonte e troca provedor e modelos
+   * sem restart. enabled=false ou sem chave → nenhuma chamada ao provedor (só o fallback).
+   */
+  settings?: { resolve(): Promise<ResolvedAiSettings> }
+  /** Cria o provedor a partir da chave (default: createAiProvider). */
+  providerFactory?: AiProviderFactory
+  /** Validade da configuração lida (ms). Default 5000; 0 = relê a cada suggest. */
+  refreshMs?: number
+  /** Relógio em ms (injetável). */
+  now?: () => number
+}
+
+/** Campos que, se mudarem, recriam o provedor e invalidam o cache de classificação. */
+function settingsFingerprint(s: ResolvedAiSettings): string {
+  const c = s.config
+  return JSON.stringify([s.provider, s.enabled, c.apiKey ?? null, c.smallModel, c.largeModel, c.confidenceThreshold, c.maxTokens, c.timeoutMs])
 }
 
 export class AiTimeoutError extends Error {
@@ -41,23 +60,87 @@ export function chooseModel(config: Pick<AiConfig, 'smallModel' | 'largeModel' |
 type CacheEntry = Omit<AiSuggestion, 'source'>
 
 export class AiAssistant {
-  readonly config: AiConfig
-  private readonly provider: AiProvider | undefined
+  private currentConfig: AiConfig
+  private provider: AiProvider | undefined
   private readonly log: AiLogger | undefined
+  private readonly settings: AiAssistantOptions['settings']
+  private readonly providerFactory: AiProviderFactory
+  private readonly refreshMs: number
+  private readonly now: () => number
+  private fingerprint: string | undefined
+  private loadedAt = -Infinity
+  private loading: Promise<void> | undefined
+  private enabled = true
   private readonly cache = new Map<string, CacheEntry>()
   private readonly inflight = new Map<string, Promise<AiSuggestion>>()
   private readonly cacheSize: number
 
   constructor(opts: AiAssistantOptions = {}) {
-    this.config = resolveAiConfig(opts.config)
+    this.currentConfig = resolveAiConfig(opts.config)
     this.provider = opts.provider
     this.log = opts.logger
     this.cacheSize = opts.cacheSize ?? 1000
+    this.settings = opts.settings
+    this.providerFactory = opts.providerFactory ?? createAiProvider
+    this.refreshMs = opts.refreshMs ?? 5000
+    this.now = opts.now ?? (() => Date.now())
+    // Com fonte dinâmica, nada é chamado antes da primeira leitura da configuração.
+    if (this.settings) this.provider = undefined
+  }
+
+  /** Configuração em uso (com fonte dinâmica, a última lida). */
+  get config(): AiConfig {
+    return this.currentConfig
+  }
+
+  /** Com fonte dinâmica: false quando a IA está desativada (só fallback). */
+  get isEnabled(): boolean {
+    return this.enabled && Boolean(this.provider)
+  }
+
+  /** Força a releitura da configuração (notificação de mudança). */
+  async refresh(): Promise<void> {
+    this.loadedAt = -Infinity
+    await this.sync()
+  }
+
+  private async sync(): Promise<void> {
+    if (!this.settings) return
+    if (this.now() - this.loadedAt < this.refreshMs && this.fingerprint !== undefined) return
+    this.loading ??= this.load().finally(() => (this.loading = undefined))
+    await this.loading
+  }
+
+  private async load(): Promise<void> {
+    let s: ResolvedAiSettings
+    try {
+      s = await this.settings!.resolve()
+    } catch (err) {
+      // Mantém a configuração anterior (ou só o fallback, se nunca leu) e tenta de novo na próxima chamada.
+      this.log?.warn({ err: errMessage(err) }, 'ai settings unavailable; keeping previous configuration')
+      return
+    }
+    this.loadedAt = this.now()
+    const fp = settingsFingerprint(s)
+    if (fp === this.fingerprint) return
+    const changedModel = this.fingerprint !== undefined
+    this.fingerprint = fp
+    this.currentConfig = { ...s.config }
+    this.enabled = s.enabled
+    this.provider = s.enabled && s.config.apiKey ? this.providerFactory(s.config.apiKey) : undefined
+    this.cache.clear()
+    if (changedModel) {
+      this.log?.info(
+        { provider: s.provider, enabled: s.enabled, model_small: s.config.smallModel, model_large: s.config.largeModel, has_api_key: Boolean(s.config.apiKey) },
+        'ai settings changed; provider and cache reset',
+      )
+    }
   }
 
   /** Classifica e sugere uma resposta para o texto recebido. Nunca lança. */
   async suggest(text: string): Promise<AiSuggestion> {
     try {
+      await this.sync()
       const key = hashAiText(text)
       const cached = this.cache.get(key)
       if (cached) {

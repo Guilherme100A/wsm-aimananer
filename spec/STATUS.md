@@ -22,13 +22,17 @@
 | 6 | T15 | Observabilidade | ACCEPTED | Cinzel | Radar | 0 | 16 testes; /metrics Prometheus, healthchecks nos 5 serviços, logs JSON com session_id |
 | 6 | T12 | Dashboard | ACCEPTED | Malho | Lince | 0 | 23 testes (Playwright); commit junto com T09/T15 |
 | 7 | T16 | Integração E2E | ACCEPTED | Brasa | Prisma | 0 | 18 testes contra a stack Docker; subida ~13 s; restart sem perda/duplicata |
-| 8 | T17 | Login admin e proxy na sessão (API) | IN_PROGRESS | Malho | Lince | 0 | pedido do humano |
-| 8 | T18 | Dashboard: login admin e proxy no cadastro | IN_PROGRESS | Cinzel | Radar | 0 | pedido do humano; contrato = SPEC T17 |
-| 8 | T19 | Configurações do modelo de LLM | IN_PROGRESS | Brasa | Prisma | 0 | pedido do humano |
+| 8 | T17 | Login admin e proxy na sessão (API) | ACCEPTED | Malho | Lince | 1 | 37 testes; TRUST_PROXY (mais à direita); portas internas só em 127.0.0.1 |
+| 8 | T18 | Dashboard: login admin e proxy no cadastro | ACCEPTED | Cinzel | Radar | 0 | 23 testes; T12 atualizado e verde (22) |
+| 8 | T19 | Configurações do modelo de LLM | ACCEPTED | Brasa | Prisma | 0 | 55 testes; migration 0003 ai_settings; worker relê config a cada 5 s |
 
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · onda 8 · Regressão serial após T17/T18/T19: T01 op/te, T03, T05, T06, T13, T12 (2ª rodada; 1ª deu timeout de page.goto por carga) e T16 op, todos ok. Postgres/redis recriados em 127.0.0.1. · Orquestrador
+- 2026-09-24 · T20 (grupos) · Variante aceita (entrada com aprovação humana, só grupos onde outra conta do sistema está, teto progressivo). Regra adicional (EspecialistaZap): proibido usar para substituir conta banida nos grupos (contornar ban). Aguarda respostas do humano (a)(b)(c) e números finais do especialista. · Orquestrador
+- 2026-09-24 · T17 · Endurecimento aceito: docker-compose publica postgres, redis, api e worker só em 127.0.0.1; só o dashboard fica exposto na rede. Os containers em execução precisam ser recriados para valer. · Orquestrador
+- 2026-09-24 · T17 · Aceitas: revogação de logout em memória (documentada), PATCH password ausente/null/string, troca de proxy cria linha nova. Rejeitado (ciclo 1): rate limit de login confiava em x-forwarded-for controlado pelo cliente. Correção: TRUST_PROXY (default false) + nginx sobrescreve XFF; com TRUST_PROXY=true usa o valor MAIS À DIREITA (1 salto confiável), não o 1º (proposta do Malho, aceita). · Orquestrador
 - 2026-09-24 · T19 · Pedido do humano: (a) seção de configuração do LLM → T19; (b) entrar automaticamente em grupos "caçados" pela IA conforme a progressão da conta → RECUSADO pelo Orquestrador (padrão de spam/ban, contraria AC-T14-03, F-NO-GROUP-JOIN e AC-T13-06). Alternativa oferecida ao humano: IA analisa a conta e recomenda; entrada manual por link de convite, só após warm-up, auditada — aguarda decisão. · Orquestrador
 - 2026-09-24 · T17/T18 · Pedido do humano: proxy configurado junto com a sessão (sem página Proxies separada) e login do painel por usuário/senha admin/nimda. Decisões do Orquestrador: credenciais via ADMIN_USERNAME/ADMIN_PASSWORD (default admin/nimda, warn se default), token de login assinado com expiração, API_TOKEN continua valendo para integrações, /api/proxies mantido por compatibilidade. · Humano/Orquestrador
 - 2026-09-24 · FINAL · 17/17 ACCEPTED. Regressão final (wave 7, serial): 33 de 34 verificações ok e 0 falhas; a última (T16 tester) foi interrompida pelo Claude Code por memória crítica do sistema, mas já tinha passado isolada (18/18). Política AC-T16-05: marca durável antes do envio; SIGKILL durante o envio → failed "delivery state unknown" (nunca reenvia). · Orquestrador

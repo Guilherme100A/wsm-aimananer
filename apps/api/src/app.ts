@@ -4,6 +4,7 @@ import { requestId } from 'hono/request-id'
 import { notFound, onError } from './errors'
 import { auditMiddleware } from './middleware/audit'
 import { bearerAuth } from './middleware/auth'
+import { loginTokenAuth } from './middleware/auth'
 import { requestLogger } from './middleware/request-log'
 import { sessionLogContext, sessionRequestLogger } from './observability/session-context'
 import { registerRoutes } from './routes/index'
@@ -18,6 +19,8 @@ export function createApp(deps: AppDeps) {
   app.use('*', sessionLogContext())
   app.use('*', requestLogger(deps.logger))
   app.use('*', sessionRequestLogger())
+  // T17 — token de login do painel (e POST /api/auth/login público); o API_TOKEN segue valendo no bearerAuth.
+  app.use('/api/*', loginTokenAuth(deps))
   app.use('/api/*', bearerAuth(deps.apiToken))
   app.use('/api/*', auditMiddleware(deps.db))
 

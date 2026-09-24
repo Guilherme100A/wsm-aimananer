@@ -39,30 +39,27 @@ describe('T12 — lista de sessões e adicionar número', () => {
     await expect.poll(() => hashOf(page), { timeout: 10_000 }).toBe(`#/sessions/${s.id}`)
   })
 
-  it('AC-T12-04 "+ Adicionar número" abre o formulário com Nome, Número, Proxy/IP, Observação e os dois botões', async () => {
-    const proxy = await api(ctx, 'POST', '/api/proxies', { url: 'http://u:segredo@127.0.0.1:18080', name: 'proxy-form' })
-    expect(proxy.status, proxy.text).toBe(201)
+  // T18 (AC-T18-02): o proxy passa a ser informado inline no formulário (sem select de proxies cadastrados).
+  it('AC-T12-04 "+ Adicionar número" abre o formulário com Nome, Número, Proxy, Observação e os dois botões', async () => {
     const page = await ctx.newPage()
     await go(ctx, page, '/sessions')
     const add = page.locator(tid('add-session'))
     expect(((await add.textContent()) ?? '').trim()).toBe('+ Adicionar número')
     await add.click()
-    for (const f of ['new-name', 'new-phone', 'new-proxy', 'new-note']) await page.locator(tid(f)).waitFor({ state: 'visible' })
-    for (const label of ['Nome', 'Número', 'Proxy/IP', 'Observação']) expect(await page.getByText(label, { exact: true }).count(), `rótulo ${label}`).toBeGreaterThan(0)
+    for (const f of ['new-name', 'new-phone', 'new-proxy-protocol', 'new-proxy-host', 'new-proxy-port', 'new-note']) await page.locator(tid(f)).waitFor({ state: 'visible' })
+    for (const label of ['Nome', 'Número', 'Proxy', 'Observação']) expect(await page.getByText(label, { exact: true }).count(), `rótulo ${label}`).toBeGreaterThan(0)
     expect(((await page.locator(tid('gen-qr')).textContent()) ?? '').trim()).toBe('Gerar QR Code')
     expect(((await page.locator(tid('gen-pairing')).textContent()) ?? '').trim()).toBe('Gerar Pairing Code')
-    const options = await page.locator(`${tid('new-proxy')} option`).evaluateAll((els: any[]) => els.map((e) => e.value))
-    expect(options, 'select de proxy deve ter opção vazia e o proxy cadastrado').toEqual(expect.arrayContaining(['', proxy.body.id]))
   })
 
   it('AC-T12-04 Gerar QR Code: cria a sessão, mostra o QR, atualiza quando chega QR novo e mostra conectado ao autenticar', async () => {
-    const proxy = await api(ctx, 'POST', '/api/proxies', { url: 'http://127.0.0.1:18081', name: 'proxy-qr' })
     const page = await ctx.newPage()
     await go(ctx, page, '/sessions/new')
     const name = `qr-${randomBytes(3).toString('hex')}`
     await page.locator(tid('new-name')).fill(name)
     await page.locator(tid('new-phone')).fill(randomPhone())
-    await page.locator(tid('new-proxy')).selectOption(proxy.body.id)
+    await page.locator(tid('new-proxy-host')).fill('127.0.0.1')
+    await page.locator(tid('new-proxy-port')).fill('18081')
     await page.locator(tid('new-note')).fill('observação do teste')
     await page.locator(tid('gen-qr')).click()
 
@@ -74,7 +71,8 @@ describe('T12 — lista de sessões e adicionar número', () => {
       return id
     }, { timeout: 10_000, message: 'sessão não criada pela UI' }).not.toBe('')
     const created = await api(ctx, 'GET', `/api/sessions/${id}`)
-    expect(created.body).toMatchObject({ name, proxyId: proxy.body.id, note: 'observação do teste' })
+    expect(created.body).toMatchObject({ name, note: 'observação do teste', proxy: { host: '127.0.0.1' } })
+    expect(Number(created.body.proxy.port)).toBe(18081)
     await expect.poll(() => ctx.tf.connectCount(id), { timeout: 10_000, message: 'POST /qr não iniciou a conexão' }).toBe(1)
     const t = ctx.tf.last(id)!
 

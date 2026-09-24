@@ -1,18 +1,20 @@
-// "+ Adicionar número" (AC-T12-04): cria a sessão e autentica por QR ou pairing code até conectar.
+// "+ Adicionar número" (AC-T12-04, AC-T18-02): cria a sessão com o proxy inline e autentica por QR ou pairing code.
 import { useEffect, useState, type FormEvent } from 'react'
+import { ProxyFields } from '../components/ProxyFields'
 import { ErrorText, StateIndicator } from '../components/ui'
 import { api } from '../lib/api'
-import { POLL, usePoll } from '../lib/hooks'
+import { POLL } from '../lib/hooks'
+import { emptyProxyForm, parseProxyForm, type ProxyInput } from '../lib/proxy-form'
 import { routeHref } from '../lib/router'
 import type { Session, SessionState } from '../lib/types'
 
 type Mode = 'qr' | 'pairing'
 
 export function NewSession() {
-  const proxies = usePoll(() => api.proxies(), 0)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [proxyId, setProxyId] = useState('')
+  const [proxy, setProxy] = useState(emptyProxyForm)
+  const [proxyError, setProxyError] = useState<string>()
   const [note, setNote] = useState('')
   const [session, setSession] = useState<Session>()
   const [mode, setMode] = useState<Mode>()
@@ -48,12 +50,12 @@ export function NewSession() {
     }
   }, [session, mode, connected])
 
-  async function ensureSession(): Promise<Session> {
+  async function ensureSession(proxyInput: ProxyInput | null): Promise<Session> {
     if (session) return session
     const created = await api.createSession({
       name: name.trim(),
       phone: phone.trim(),
-      proxyId: proxyId || null,
+      ...(proxyInput ? { proxy: proxyInput } : {}),
       note: note.trim() || null,
     })
     setSession(created)
@@ -63,10 +65,14 @@ export function NewSession() {
 
   async function start(e: FormEvent | undefined, m: Mode) {
     e?.preventDefault()
+    // Validação do proxy no cliente, antes de qualquer chamada à API (sessão já criada: o bloco fica travado).
+    const parsed = session ? ({ ok: true, proxy: null } as const) : parseProxyForm(proxy)
+    setProxyError(parsed.ok ? undefined : parsed.error)
+    if (!parsed.ok) return
     setBusy(true)
     setError(undefined)
     try {
-      const s = await ensureSession()
+      const s = await ensureSession(parsed.proxy)
       setMode(m)
       if (m === 'qr') {
         setCode(undefined)
@@ -101,18 +107,12 @@ export function NewSession() {
           disabled={!!session}
           required
         />
-        <label htmlFor="new-proxy">Proxy/IP</label>
-        <select id="new-proxy" data-testid="new-proxy" value={proxyId} onChange={(e) => setProxyId(e.target.value)} disabled={!!session}>
-          <option value="">Sem proxy</option>
-          {(proxies.data ?? [])
-            .filter((p) => !p.sessionId)
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name ? `${p.name} — ` : ''}
-                {p.url}
-              </option>
-            ))}
-        </select>
+        <ProxyFields prefix="new-proxy" value={proxy} onChange={(v) => setProxy(v)} disabled={!!session} />
+        {proxyError ? (
+          <p className="error" role="alert" data-testid="new-proxy-error">
+            {proxyError}
+          </p>
+        ) : null}
         <label htmlFor="new-note">Observação</label>
         <textarea id="new-note" data-testid="new-note" value={note} onChange={(e) => setNote(e.target.value)} disabled={!!session} />
         <div className="actions">

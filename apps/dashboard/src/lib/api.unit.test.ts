@@ -68,9 +68,10 @@ describe('cliente da API', () => {
     await expect(api.sessions()).rejects.toMatchObject({ status: 401, code: 'UNAUTHORIZED' })
     expect(getToken()).toBeNull()
     setToken('keep')
-    await expect(api.checkToken('other')).rejects.toBeInstanceOf(ApiRequestError)
+    await expect(api.login('admin', 'errada')).rejects.toBeInstanceOf(ApiRequestError)
     expect(getToken()).toBe('keep')
-    expect((calls.at(-1)!.init?.headers as Record<string, string>).authorization).toBe('Bearer other')
+    expect(calls.at(-1)).toMatchObject({ url: '/api/auth/login', init: { method: 'POST' } })
+    expect(JSON.parse(String(calls.at(-1)!.init?.body))).toEqual({ username: 'admin', password: 'errada' })
   })
 
   it('erro no formato da SPEC 3.4 vira ApiRequestError com code e message', async () => {

@@ -10,6 +10,14 @@
 | api | 3000 | `API_HOST_PORT` (3000) | `GET /health` |
 | dashboard (nginx) | 80 | `DASHBOARD_HOST_PORT` (8080) | `GET /` |
 
+- **Exposição de rede (T17):** todas as portas de host são publicadas **só em `127.0.0.1`** (postgres, redis,
+  worker 9464/9465 e api 3000), **menos o dashboard**, que escuta em todas as interfaces. Os testes e as
+  ferramentas no próprio host continuam acessando por `localhost`, mas nada fica aberto na rede local:
+  postgres usa `wsm/wsm` por default e redis não tem senha. Da rede, o único ponto de entrada é o nginx do
+  dashboard, que encaminha `/api` para a API sobrescrevendo `X-Forwarded-For` (a API roda com
+  `TRUST_PROXY=true`, ver `docs/auth.md`). Para expor outra porta de propósito, troque o `127.0.0.1:` do
+  mapeamento e proteja o serviço (senha no postgres/redis, `INTERNAL_TOKEN` forte, `TRUST_PROXY=false` na
+  API).
 - `docker compose up -d --wait` sobe os 5 serviços healthy. Numa máquina com as imagens já construídas, isso leva uns 15 s.
 - O compose não fixa `container_name` nem nomes de volume. Para rodar outra instância isolada, use `docker compose -p <projeto> ...` com outras portas.
 - O dashboard é servido pelo nginx, que encaminha `/api`, `/metrics` e `/health` para `api:3000` (`apps/dashboard/nginx.conf`).
@@ -34,7 +42,7 @@ A API e o worker rodam em containers separados. O worker é o dono do `SessionMa
 - Os erros de domínio (`SessionError`, `InvalidTransitionError`, `MessageNotFoundError`, `TransportNotConnectedError`...) viajam serializados e a API os recria com as classes originais. Assim o mapeamento HTTP (SPEC 3.4) é o mesmo dos testes em processo.
 - Se o worker estiver fora do ar, a API responde 500 `INTERNAL_ERROR`.
 - **Limitação conhecida:** o `getTransport` remoto é síncrono e sempre devolve um proxy. Por isso, na API em container, o gate `connected` do pipeline olha **só o estado** (WARMING/STABLE). Uma sessão nesse estado mas momentaneamente sem socket tem a mensagem aceita, e ela fica `queued` até a conexão voltar (a fila segura o envio). Os grupos consultam o worker e respondem 409 se o transporte não estiver conectado.
-- A porta 9465 é publicada no host para os testes E2E. Em produção, não publique essa porta e troque o `INTERNAL_TOKEN`.
+- A porta 9465 é publicada no host, só em `127.0.0.1`, para os testes E2E. Em produção, não publique essa porta e troque o `INTERNAL_TOKEN`.
 
 ## Boot do worker
 

@@ -2,6 +2,7 @@ import { ErrorText, StateIndicator } from '../components/ui'
 import { formatDateTime } from '../lib/aggregate'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
+import { proxyAddress } from '../lib/proxy-form'
 import { routeHref } from '../lib/router'
 
 export function Sessions() {
@@ -21,6 +22,7 @@ export function Sessions() {
             <th>Estado</th>
             <th>Nome</th>
             <th>Número</th>
+            <th>Proxy</th>
             <th>Última conexão</th>
             <th>Observação</th>
           </tr>
@@ -37,13 +39,14 @@ export function Sessions() {
                 </a>
               </td>
               <td>{s.phone}</td>
+              <td data-testid="session-proxy">{proxyAddress(s.proxy)}</td>
               <td>{formatDateTime(s.lastConnectedAt)}</td>
               <td>{s.note ?? ''}</td>
             </tr>
           ))}
           {data && data.length === 0 ? (
             <tr>
-              <td colSpan={5} className="empty">
+              <td colSpan={6} className="empty">
                 Nenhuma sessão
               </td>
             </tr>

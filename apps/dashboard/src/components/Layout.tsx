@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
-import { clearToken } from '../lib/auth'
+import { signOut } from '../lib/signout'
 import { navigate, type Route } from '../lib/router'
 
 const LINKS: Array<{ route: Route['name']; href: string; label: string; testId: string }> = [
   { route: 'home', href: '#/', label: 'Início', testId: 'nav-home' },
   { route: 'sessions', href: '#/sessions', label: 'Sessões', testId: 'nav-sessions' },
-  { route: 'proxies', href: '#/proxies', label: 'Proxies', testId: 'nav-proxies' },
   { route: 'contacts', href: '#/contacts', label: 'Contatos', testId: 'nav-contacts' },
   { route: 'groups', href: '#/groups', label: 'Grupos', testId: 'nav-groups' },
   { route: 'alerts', href: '#/alerts', label: 'Alertas', testId: 'nav-alerts' },
+  { route: 'ai', href: '#/ai', label: 'IA / Modelo LLM', testId: 'nav-ai' },
 ]
 
 export function Layout({ route, children }: { route: Route; children: ReactNode }) {
@@ -27,8 +27,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
           className="link"
           data-testid="nav-logout"
           onClick={() => {
-            clearToken()
-            navigate({ name: 'login' })
+            void signOut().then(() => navigate({ name: 'login' }))
           }}
         >
           Sair

@@ -87,7 +87,8 @@ describe('/api/sessions', () => {
 
   it('GET lista e detalhe; id inválido/inexistente → 404 SESSION_NOT_FOUND', async () => {
     const { req } = setup()
-    expect(await (await req('GET', '/api/sessions')).json()).toEqual({ items: [view()] })
+    // T17 (AC-T17-05): a view traz `proxy` (null quando a sessão não tem proxy).
+    expect(await (await req('GET', '/api/sessions')).json()).toEqual({ items: [{ ...view(), proxy: null }] })
     expect((await req('GET', `/api/sessions/${ID}`)).status).toBe(200)
     for (const id of ['xyz', '22222222-2222-4222-8222-222222222222']) {
       const res = await req('GET', `/api/sessions/${id}`)

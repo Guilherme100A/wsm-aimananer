@@ -1,13 +1,15 @@
 // Cliente da API: sempre por caminhos relativos (/api, /metrics), mesma origem do dashboard.
 import { clearToken, getToken } from './auth'
+import type { ProxyInput } from './proxy-form'
 import type {
+  AuthUser,
   Contact,
   Group,
   ImportResult,
+  LoginResult,
   Message,
   MessageEvent,
   MessageStatus,
-  Proxy,
   QrInfo,
   Session,
   SessionHealth,
@@ -80,13 +82,20 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
 const enc = encodeURIComponent
 
 export const api = {
-  /** Valida o token (GET /api/sessions). */
-  checkToken: (token: string) => request<{ items: Session[] }>('/api/sessions', { token, keepTokenOn401: true }),
+  /** Login do administrador (AC-T18-01). Um 401 aqui não limpa o token salvo. */
+  login: (username: string, password: string) =>
+    request<LoginResult>('/api/auth/login', { body: { username, password }, keepTokenOn401: true }),
+  me: () => request<{ user: AuthUser; expiresAt: string | null }>('/api/auth/me'),
+  /** Revoga o token atual (204). */
+  logout: () => request<void>('/api/auth/logout', { method: 'POST', keepTokenOn401: true }),
 
   sessions: () => request<{ items: Session[] }>('/api/sessions').then((r) => r.items),
   session: (id: string) => request<Session>(`/api/sessions/${enc(id)}`),
-  createSession: (input: { name: string; phone: string; proxyId?: string | null; note?: string | null }) =>
+  createSession: (input: { name: string; phone: string; proxy?: ProxyInput | null; note?: string | null }) =>
     request<Session>('/api/sessions', { body: input }),
+  /** Edita a sessão (AC-T17-04). `proxy: null` remove; sem `password` mantém a senha atual. */
+  updateSession: (id: string, input: { name?: string; note?: string | null; proxy?: ProxyInput | null }) =>
+    request<Session>(`/api/sessions/${enc(id)}`, { method: 'PATCH', body: input }),
   startQr: (id: string) => request<Session>(`/api/sessions/${enc(id)}/qr`, { method: 'POST' }),
   getQr: (id: string) => request<QrInfo>(`/api/sessions/${enc(id)}/qr`),
   pairingCode: (id: string, phone?: string) =>
@@ -105,10 +114,6 @@ export const api = {
     return request<{ items: Message[] }>(`/api/messages?${q}`).then((r) => r.items)
   },
   messageEvents: (id: string) => request<{ items: MessageEvent[] }>(`/api/messages/${enc(id)}/events`).then((r) => r.items),
-
-  proxies: () => request<{ items: Proxy[] }>('/api/proxies').then((r) => r.items),
-  createProxy: (input: { url: string; name?: string | null }) => request<Proxy>('/api/proxies', { body: input }),
-  deleteProxy: (id: string) => request<void>(`/api/proxies/${enc(id)}`, { method: 'DELETE' }),
 
   contacts: () => request<Contact[]>('/api/contacts?limit=1000'),
   importContacts: (csv: string) => request<ImportResult>('/api/contacts/import', { raw: { body: csv, contentType: 'text/csv' } }),

@@ -22,8 +22,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-wsm}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wsm}
       POSTGRES_DB: ${POSTGRES_DB:-wsm}
+    # T17: portas internas só em 127.0.0.1 (não expostas na rede local); só o dashboard em todas as interfaces.
     ports:
-      - '${POSTGRES_HOST_PORT:-5432}:5432'
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -37,7 +38,7 @@ services:
     # AOF: a fila (BullMQ) e as marcas de envio em curso sobrevivem a um restart do Redis.
     command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - '${REDIS_HOST_PORT:-6379}:6379'
+      - '127.0.0.1:${REDIS_HOST_PORT:-6379}:6379'
     volumes:
       - redisdata:/data
     healthcheck:
@@ -60,8 +61,8 @@ services:
       WORKER_HEALTH_PORT: '9464'
       WORKER_INTERNAL_PORT: '9465'
     ports:
-      - '${WORKER_HEALTH_HOST_PORT:-9464}:9464'
-      - '${WORKER_INTERNAL_HOST_PORT:-9465}:9465'
+      - '127.0.0.1:${WORKER_HEALTH_HOST_PORT:-9464}:9464'
+      - '127.0.0.1:${WORKER_INTERNAL_HOST_PORT:-9465}:9465'
     # Webhooks de alerta para serviços no host (ex.: receptor de teste em host.docker.internal).
     extra_hosts:
       - 'host.docker.internal:host-gateway'
@@ -88,8 +89,10 @@ services:
       <<: *app-env
       PORT: '3000'
       WORKER_INTERNAL_URL: http://worker:9465
+      # T17: o nginx do dashboard sobrescreve X-Forwarded-For com o IP real do cliente (limite de login por IP).
+      TRUST_PROXY: 'true'
     ports:
-      - '${API_HOST_PORT:-3000}:3000'
+      - '127.0.0.1:${API_HOST_PORT:-3000}:3000'
     depends_on:
       postgres:
         condition: service_healthy

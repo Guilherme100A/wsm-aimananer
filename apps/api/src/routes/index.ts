@@ -13,6 +13,8 @@ import { limitsRoutes } from './messages-limits'
 import { metricsRoutes } from '../observability/metrics-route'
 import { webhooksRoutes } from './webhooks'
 import { suggestionsRoutes } from './suggestions'
+import { authRoutes } from './auth'
+import { aiSettingsRoutes } from './ai-settings'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', healthRoutes(deps))
@@ -29,4 +31,8 @@ export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', metricsRoutes(deps))
   // T13 — sugestões da IA com aprovação humana
   app.route('/', suggestionsRoutes(deps))
+  // T17 — login de administrador do painel (/api/auth/login público; me/logout autenticados)
+  app.route('/', authRoutes(deps))
+  // T19 — configurações do modelo de LLM (GET/PUT /api/ai/settings, POST /api/ai/settings/test)
+  app.route('/', aiSettingsRoutes(deps))
 }

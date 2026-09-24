@@ -2,6 +2,14 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { E164_REGEX, healthEvents, proxies, sessionCredentials, sessions, type Database } from '@wsm/db'
 import { isUniqueViolation } from '../proxy/errors'
+import {
+  insertInlineProxy,
+  normalizeInlineProxy,
+  type InlineProxyInput,
+  type NormalizedInlineProxy,
+} from '../proxy/inline'
+import { decryptProxyPassword } from '../proxy/service'
+import { ProxyUrlError } from '../proxy/url'
 import { assertTransition, InvalidTransitionError, type SessionState } from './states'
 
 export type SessionRow = typeof sessions.$inferSelect
@@ -12,6 +20,8 @@ export class SessionError extends Error {
   constructor(
     readonly code: SessionErrorCode,
     message: string,
+    /** Campo inválido (VALIDATION_ERROR), ex.: `proxy.port`. */
+    readonly field?: string,
   ) {
     super(message)
     this.name = 'SessionError'
@@ -40,6 +50,24 @@ export interface CreateSessionInput {
   phone: string
   proxyId?: string | null
   note?: string | null
+  /** T17: proxy informado junto com a sessão (criado e vinculado na mesma transação). Exclusivo com proxyId. */
+  proxy?: InlineProxyInput | null
+}
+
+/** T17 — edição da sessão. `proxy: null` remove o proxy; ausente mantém. */
+export interface UpdateSessionInput {
+  name?: string
+  note?: string | null
+  proxy?: InlineProxyInput | null
+}
+
+export interface UpdateSessionResult {
+  row: SessionRow
+  /** O proxy da sessão mudou (troca ou remoção): requires_restart foi marcado. */
+  proxyChanged: boolean
+  previousProxyId: string | null
+  /** Proxy antigo apagado por ter ficado sem uso. */
+  deletedProxyId: string | null
 }
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null)
@@ -79,11 +107,16 @@ export class SessionStore {
   constructor(readonly db: Database) {}
 
   async create(input: CreateSessionInput): Promise<SessionRow> {
-    if (!E164_REGEX.test(input.phone)) throw new SessionError('VALIDATION_ERROR', 'phone must be E.164 (e.g. +5511999999999)')
-    const proxyId = input.proxyId ?? null
+    if (!E164_REGEX.test(input.phone)) throw new SessionError('VALIDATION_ERROR', 'phone must be E.164 (e.g. +5511999999999)', 'phone')
+    if (input.proxy && input.proxyId) throw new SessionError('VALIDATION_ERROR', 'use either proxy or proxyId, not both', 'proxy')
+    const inline = input.proxy ? normalizeProxyOrThrow(input.proxy) : undefined
+    let proxyId = input.proxyId ?? null
     try {
       return await this.db.transaction(async (tx) => {
-        if (proxyId) {
+        if (inline) {
+          // T17: proxy e sessão na mesma transação; qualquer falha desfaz os dois.
+          proxyId = (await insertInlineProxy(tx, inline)).id
+        } else if (proxyId) {
           const [proxy] = await tx.select({ id: proxies.id }).from(proxies).where(eq(proxies.id, proxyId)).for('update')
           if (!proxy) throw new SessionError('PROXY_NOT_FOUND', `proxy ${proxyId} not found`)
           const [owner] = await tx.select({ id: sessions.id }).from(sessions).where(eq(sessions.proxyId, proxyId))
@@ -116,6 +149,57 @@ export class SessionStore {
     const row = await this.find(id)
     if (!row) throw new SessionError('SESSION_NOT_FOUND', `session ${id} not found`)
     return row
+  }
+
+  /**
+   * T17 (AC-T17-04): edita nome, observação e o proxy da sessão numa transação.
+   * Trocar ou remover o proxy marca `requires_restart` (a nova rede só vale após restart, T06) e apaga o proxy
+   * antigo, que fica sem uso (o vínculo proxy↔sessão é 1:1). No proxy, `password` ausente mantém a senha atual.
+   * Proxy igual ao atual não conta como troca.
+   */
+  async updateDetails(id: string, input: UpdateSessionInput): Promise<UpdateSessionResult> {
+    if (input.name !== undefined && !input.name.trim()) throw new SessionError('VALIDATION_ERROR', 'name must not be empty', 'name')
+    const inline = input.proxy ? normalizeProxyOrThrow(input.proxy) : input.proxy
+    const keepPassword = input.proxy ? input.proxy.password === undefined : false
+    if (!UUID_RE.test(id)) throw new SessionError('SESSION_NOT_FOUND', `session ${id} not found`)
+    return this.db.transaction(async (tx) => {
+      const [current] = await tx.select().from(sessions).where(eq(sessions.id, id)).for('update')
+      if (!current) throw new SessionError('SESSION_NOT_FOUND', `session ${id} not found`)
+      const set: Partial<typeof sessions.$inferInsert> = { updatedAt: new Date() }
+      if (input.name !== undefined) set.name = input.name.trim()
+      if (input.note !== undefined) set.note = input.note
+      const previousProxyId = current.proxyId
+      let proxyChanged = false
+
+      if (inline !== undefined) {
+        const [old] = previousProxyId ? await tx.select().from(proxies).where(eq(proxies.id, previousProxyId)).for('update') : []
+        if (inline === null) {
+          proxyChanged = previousProxyId !== null
+          set.proxyId = null
+        } else {
+          const kept = keepPassword && old ? decryptProxyPassword(old) : null
+          // Senha só faz sentido com usuário (a URL do proxy é user:pass@host).
+          const desired: NormalizedInlineProxy = { ...inline, password: inline.username ? (keepPassword ? kept : inline.password) : null }
+          if (!old || !sameProxy(old, desired)) {
+            proxyChanged = true
+            set.proxyId = (await insertInlineProxy(tx, desired)).id
+          }
+        }
+        if (proxyChanged) set.requiresRestart = true
+      }
+
+      const [row] = await tx.update(sessions).set(set).where(eq(sessions.id, id)).returning()
+      let deletedProxyId: string | null = null
+      if (proxyChanged && previousProxyId) {
+        // Vínculo 1:1: o proxy antigo ficou sem uso.
+        const [stillUsed] = await tx.select({ id: sessions.id }).from(sessions).where(eq(sessions.proxyId, previousProxyId))
+        if (!stillUsed) {
+          await tx.delete(proxies).where(eq(proxies.id, previousProxyId))
+          deletedProxyId = previousProxyId
+        }
+      }
+      return { row: row!, proxyChanged, previousProxyId, deletedProxyId }
+    })
   }
 
   /**
@@ -171,4 +255,24 @@ export class SessionStore {
       .where(and(sql`${sessions.status} <> 'DISCONNECTED'`, withCreds))
       .orderBy(sessions.createdAt)
   }
+}
+
+/** Valida o proxy inline; erro de campo vira SessionError VALIDATION_ERROR (400) com o campo. */
+function normalizeProxyOrThrow(input: InlineProxyInput): NormalizedInlineProxy {
+  try {
+    return normalizeInlineProxy(input)
+  } catch (err) {
+    if (err instanceof ProxyUrlError) throw new SessionError('VALIDATION_ERROR', err.message, (err as ProxyUrlError & { field?: string }).field ?? 'proxy')
+    throw err
+  }
+}
+
+function sameProxy(row: typeof proxies.$inferSelect, p: NormalizedInlineProxy): boolean {
+  return (
+    row.protocol === p.protocol &&
+    row.host === p.host &&
+    row.port === p.port &&
+    (row.username ?? null) === p.username &&
+    (decryptProxyPassword(row) ?? null) === p.password
+  )
 }

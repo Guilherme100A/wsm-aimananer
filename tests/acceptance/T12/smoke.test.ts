@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { tail } from '../helpers/exec'
-import { api, buildDashboard, DIST, go, hashOf, randomPhone, statusOf, tid, useDashboard } from './shared'
+import { ADMIN_PASSWORD, ADMIN_USERNAME, api, buildDashboard, DIST, go, hashOf, randomPhone, statusOf, tid, useDashboard } from './shared'
 
 describe('T12 — build', () => {
   it('AC-T12-07 pnpm --filter @wsm/dashboard build passa e gera dist/index.html sem URL absoluta de API', () => {
@@ -32,7 +32,8 @@ describe('T12 — smoke E2E', () => {
 
     await go(ctx, page, '/')
     await expect.poll(() => hashOf(page), { timeout: 10_000 }).toMatch(/^#\/login/)
-    await page.locator(tid('login-token')).fill(ctx.token)
+    await page.locator(tid('login-username')).fill(ADMIN_USERNAME)
+    await page.locator(tid('login-password')).fill(ADMIN_PASSWORD)
     await page.locator(tid('login-submit')).click()
     await page.locator(tid('card-connected')).waitFor({ state: 'visible', timeout: 15_000 })
 

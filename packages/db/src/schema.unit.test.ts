@@ -35,6 +35,8 @@ const TABLES = [
   'session_limits',
   // T13 — migration 0002_suggestions
   'suggestions',
+  // T19 — migration 0003_ai_settings
+  'ai_settings',
 ]
 
 /** Quantidade de migrations declaradas no journal do drizzle (cresce a cada migration nova). */

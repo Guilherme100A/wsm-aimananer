@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 import { contacts, createDb, createTempDatabase, messages, sessions, type Database, type TempDatabase } from '@wsm/db'
 import type { TransportFactory } from '../sessions'
 import { loadWorkerConfig } from './config'
-import { startWorker, type WorkerHandle } from './start'
+import { aiRefreshMs, startWorker, type WorkerHandle } from './start'
 
 let tmp: TempDatabase
 let db: Database
@@ -77,6 +77,16 @@ describe('loadWorkerConfig', () => {
     expect(loadWorkerConfig(base)).toMatchObject({ transport: 'baileys', antibanMode: 'real', healthPort: 9464, internalPort: 9465 })
     expect(() => loadWorkerConfig({ ...base, WA_TRANSPORT: 'x' })).toThrow(/WA_TRANSPORT/)
     expect(() => loadWorkerConfig({ ...base, ANTIBAN_MODE: 'off' })).toThrow()
+  })
+})
+
+describe('aiRefreshMs (T19)', () => {
+  it('default 5 s; aceita 0; ignora inválido', () => {
+    expect(aiRefreshMs({})).toBe(5000)
+    expect(aiRefreshMs({ AI_SETTINGS_REFRESH_MS: '0' })).toBe(0)
+    expect(aiRefreshMs({ AI_SETTINGS_REFRESH_MS: '1500' })).toBe(1500)
+    expect(aiRefreshMs({ AI_SETTINGS_REFRESH_MS: '-1' })).toBe(5000)
+    expect(aiRefreshMs({ AI_SETTINGS_REFRESH_MS: 'x' })).toBe(5000)
   })
 })
 
