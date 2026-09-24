@@ -4,6 +4,7 @@ import {
   TransportNotConnectedError,
   type ConnectOptions,
   type DisconnectKind,
+  type GroupParticipantResult,
   type GroupSummary,
   type IncomingMessage,
   type OutgoingContent,
@@ -17,6 +18,9 @@ export interface FakeSentMessage {
   at: Date
 }
 
+/** Grupo simulado: `members` (JIDs) permite simular "já é membro" (T20). */
+export type FakeGroup = GroupSummary & { members?: string[] }
+
 export type FakeIncomingInput = Partial<IncomingMessage> & { from: string }
 
 export class FakeTransport extends TransportEmitter implements WaTransport {
@@ -25,7 +29,10 @@ export class FakeTransport extends TransportEmitter implements WaTransport {
   /** Opções de cada chamada a `connect`. */
   readonly connectCalls: ConnectOptions[] = []
   /** Grupos devolvidos por `fetchGroups`. */
-  groups: GroupSummary[] = []
+  groups: FakeGroup[] = []
+  /** Chamadas a addGroupParticipant, em ordem (T20). */
+  readonly groupAdds: Array<{ groupId: string; jid: string }> = []
+  private readonly groupAddFailures: Error[] = []
 
   connected = false
   loggedOut = false
@@ -96,8 +103,13 @@ export class FakeTransport extends TransportEmitter implements WaTransport {
     this.sendFailures.push(err)
   }
 
-  setGroups(groups: GroupSummary[]): void {
+  setGroups(groups: FakeGroup[]): void {
     this.groups = groups
+  }
+
+  /** O próximo addGroupParticipant lança `err` (erro inesperado do transporte). */
+  failNextGroupAdd(err: Error = new Error('fake group add failure')): void {
+    this.groupAddFailures.push(err)
   }
 
   // ---- WaTransport ------------------------------------------------------------
@@ -113,7 +125,22 @@ export class FakeTransport extends TransportEmitter implements WaTransport {
 
   async fetchGroups(): Promise<GroupSummary[]> {
     if (!this.connected) throw new TransportNotConnectedError()
-    return this.groups.map((g) => ({ ...g }))
+    return this.groups.map(({ members: _members, ...g }) => ({ ...g }))
+  }
+
+  /** T20: grupo inexistente, não admin, já membro ou adicionado (inclui o jid em members e soma 1 em participants). */
+  async addGroupParticipant(groupId: string, jid: string): Promise<GroupParticipantResult[]> {
+    if (!this.connected) throw new TransportNotConnectedError()
+    this.groupAdds.push({ groupId, jid })
+    const failure = this.groupAddFailures.shift()
+    if (failure) throw failure
+    const group = this.groups.find((g) => g.id === groupId)
+    if (!group) return [{ jid, status: 'group_not_found', code: 404 }]
+    if (!group.isAdmin) return [{ jid, status: 'not_admin', code: 403 }]
+    if (group.members?.includes(jid)) return [{ jid, status: 'already_member', code: 409 }]
+    group.members = [...(group.members ?? []), jid]
+    group.participants += 1
+    return [{ jid, status: 'added', code: 200 }]
   }
 
   async logout(): Promise<void> {

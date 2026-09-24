@@ -221,8 +221,8 @@ describe('BaileysTransport', () => {
     sockets[0]!.ev.emit('connection.update', { connection: 'open' })
     await flush()
     await expect(transport.fetchGroups()).resolves.toEqual([
-      { id: 'g1@g.us', name: 'Grupo 1', participants: 5, announce: true, communityId: 'c@g.us' },
-      { id: 'g2@g.us', name: 'Grupo 2', participants: 2, announce: false },
+      { id: 'g1@g.us', name: 'Grupo 1', participants: 5, announce: true, communityId: 'c@g.us', isAdmin: false },
+      { id: 'g2@g.us', name: 'Grupo 2', participants: 2, announce: false, isAdmin: false },
     ])
   })
 

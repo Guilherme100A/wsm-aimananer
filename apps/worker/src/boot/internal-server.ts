@@ -24,6 +24,8 @@ export interface BridgeTargets {
     logout(id: string): Promise<unknown>
     getTransport(id: string): WaTransport | undefined
     isConnected(id: string): boolean
+    /** T20 — adiciona UM número a um grupo (checagens e freio no GroupParticipantService). */
+    addGroupParticipant?(adminSessionId: string, groupId: string, targetSessionId: string): Promise<unknown>
   }
   messages: {
     get(id: string): Promise<unknown>
@@ -58,6 +60,11 @@ export function bridgeHandlers(t: BridgeTargets): Record<string, Record<string, 
         const transport = s.getTransport(str(id))
         if (!transport || !s.isConnected(str(id))) throw new TransportNotConnectedError()
         return transport.fetchGroups()
+      },
+      // T20: um alvo por chamada; sem a implementação (ex.: testes antigos) o método responde erro.
+      addGroupParticipant: async ([adminSessionId, groupId, targetSessionId]) => {
+        if (!s.addGroupParticipant) throw new Error('addGroupParticipant not available')
+        return s.addGroupParticipant(str(adminSessionId), str(groupId), str(targetSessionId))
       },
     },
     messages: {
@@ -142,7 +149,7 @@ export function createInternalApp(opts: InternalAppOptions) {
       return c.json({ result: result ?? null })
     } catch (err) {
       const e = serializeError(err)
-      if (!['SessionError', 'InvalidTransitionError', 'MessageNotFoundError', 'MessageTransitionError', 'ProxyError', 'ProxyUnavailableError', 'TransportNotConnectedError'].includes(e.name)) {
+      if (!['SessionError', 'InvalidTransitionError', 'MessageNotFoundError', 'MessageTransitionError', 'ProxyError', 'ProxyUnavailableError', 'TransportNotConnectedError', 'GroupAddError'].includes(e.name)) {
         opts.logger?.error({ err: e, target: req.target, method: req.method }, 'internal rpc failed')
       }
       return c.json({ error: e })

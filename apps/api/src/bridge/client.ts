@@ -3,6 +3,7 @@
 // enqueue, HealthControl), falando com POST /internal/rpc do worker (Bearer INTERNAL_TOKEN). Os erros de
 // domínio são recriados com as classes originais para que o mapeamento HTTP das rotas não mude.
 import {
+  GroupAddError,
   InvalidTransitionError,
   MessageNotFoundError,
   MessageTransitionError,
@@ -11,6 +12,7 @@ import {
   SessionNotConnectedError,
   TransportNotConnectedError,
   type EnqueueMessageInput,
+  type GroupAddOutcome,
   type GroupSummary,
   type MessagesControl,
   type MessageView,
@@ -73,6 +75,8 @@ export function reviveError(e: RemoteErrorPayload): Error {
       return new SessionNotConnectedError(e.sessionId ?? '', msg)
     case 'TransportNotConnectedError':
       return new TransportNotConnectedError(msg)
+    case 'GroupAddError':
+      return new GroupAddError(e.code as never, msg, (e.details ?? { result: 'failed', attempted: false, jid: null }) as never)
     default: {
       const err = new Error(msg)
       err.name = e.name ?? 'Error'
@@ -84,7 +88,10 @@ export function reviveError(e: RemoteErrorPayload): Error {
 
 export interface WorkerBridge {
   call<T>(target: string, method: string, ...args: unknown[]): Promise<T>
-  sessions: SessionsControl & { getTransport(sessionId: string): WaTransport }
+  sessions: SessionsControl & {
+    getTransport(sessionId: string): WaTransport
+    addGroupParticipant(adminSessionId: string, groupId: string, targetSessionId: string): Promise<GroupAddOutcome>
+  }
   messages: MessagesControl & SendQueue
   health: HealthControl
 }
@@ -130,6 +137,8 @@ export function createWorkerBridge(opts: WorkerBridgeOptions): WorkerBridge {
       on: () => undefined,
       sendMessage: unsupported,
       fetchGroups: () => call<GroupSummary[]>('sessions', 'fetchGroups', sessionId),
+      // T20: a adição a grupo passa por sessions.addGroupParticipant (checagens e freio no worker), nunca por aqui.
+      addGroupParticipant: unsupported,
       logout: unsupported,
       close: unsupported,
     } as WaTransport
@@ -147,6 +156,7 @@ export function createWorkerBridge(opts: WorkerBridgeOptions): WorkerBridge {
     restart: (id) => call('sessions', 'restart', id),
     logout: (id) => call('sessions', 'logout', id),
     getTransport: remoteTransport,
+    addGroupParticipant: (adminSessionId, groupId, targetSessionId) => call<GroupAddOutcome>('sessions', 'addGroupParticipant', adminSessionId, groupId, targetSessionId),
   }
 
   const messages: WorkerBridge['messages'] = {

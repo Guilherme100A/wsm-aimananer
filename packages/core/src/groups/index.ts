@@ -16,6 +16,8 @@ export interface GroupView {
   status: GroupStatus
   announce: boolean
   communityId: string | null
+  /** T20 — a sessão é admin do grupo (pode adicionar números manualmente). */
+  isAdmin: boolean
 }
 
 export function toGroupView(g: GroupSummary): GroupView {
@@ -26,6 +28,7 @@ export function toGroupView(g: GroupSummary): GroupView {
     status: g.announce ? 'announce' : 'open',
     announce: g.announce,
     communityId: g.communityId ?? null,
+    isAdmin: g.isAdmin === true,
   }
 }
 
@@ -73,3 +76,6 @@ export async function listSessionGroups(opts: ListSessionGroupsOptions): Promise
   if (!transport) throw new SessionNotConnectedError(opts.sessionId)
   return listGroups(transport, opts.sessionId)
 }
+
+// T20 — adicionar UM número a um grupo (ação manual do admin; sem lote, fila, timer ou IA).
+export * from './participants'

@@ -1,21 +1,25 @@
 // Grupos (T14): somente visualização e atualização manual. Nunca entra em grupos automaticamente.
+// T20: em grupos em que a sessão é admin, "Adicionar número" adiciona UMA sessão do sistema, com confirmação.
 import { useState } from 'react'
+import { GroupAddDialog } from '../components/GroupAddDialog'
 import { ErrorText } from '../components/ui'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
 import { indicatorText } from '../lib/states'
-import type { Group } from '../lib/types'
+import { NOT_ADMIN_HINT, type GroupWithAdmin } from './Groups.logic'
 
 export function Groups() {
   const sessions = usePoll(() => api.sessions(), POLL.page)
   const [sessionId, setSessionId] = useState('')
-  const [groups, setGroups] = useState<Group[]>()
+  const [groups, setGroups] = useState<GroupWithAdmin[]>()
+  const [adding, setAdding] = useState<GroupWithAdmin>()
   const [error, setError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
 
   async function load(id: string, refresh = false) {
     setSessionId(id)
     setGroups(undefined)
+    setAdding(undefined)
     setError(undefined)
     if (!id) return
     setBusy(true)
@@ -54,6 +58,7 @@ export function Groups() {
               <th>Participantes</th>
               <th>Envio</th>
               <th>Comunidade</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -63,17 +68,43 @@ export function Groups() {
                 <td>{g.participants}</td>
                 <td>{g.announce ? 'Somente admins' : 'Aberto'}</td>
                 <td>{g.communityId ?? '—'}</td>
+                <td>
+                  <button
+                    type="button"
+                    data-testid="group-add-number"
+                    disabled={!g.isAdmin}
+                    title={g.isAdmin ? 'Adicionar uma sessão do sistema a este grupo' : NOT_ADMIN_HINT}
+                    onClick={() => setAdding(g)}
+                  >
+                    Adicionar número
+                  </button>
+                  {!g.isAdmin ? (
+                    <small className="hint" data-testid="group-add-hint">
+                      {NOT_ADMIN_HINT}
+                    </small>
+                  ) : null}
+                </td>
               </tr>
             ))}
             {groups.length === 0 ? (
               <tr>
-                <td colSpan={4} className="empty">
+                <td colSpan={5} className="empty">
                   Nenhum grupo
                 </td>
               </tr>
             ) : null}
           </tbody>
         </table>
+      ) : null}
+      {adding && sessionId ? (
+        <GroupAddDialog
+          key={adding.id}
+          adminSessionId={sessionId}
+          group={adding}
+          sessions={sessions.data ?? []}
+          onClose={() => setAdding(undefined)}
+          onAdded={() => void api.groups(sessionId).then(setGroups, setError)}
+        />
       ) : null}
     </div>
   )

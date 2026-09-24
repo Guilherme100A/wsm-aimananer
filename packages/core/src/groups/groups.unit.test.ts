@@ -25,7 +25,7 @@ const storeWith = (status: SessionState) => ({
 
 describe('grupos', () => {
   it('toGroupView mapeia status a partir de announce', () => {
-    expect(toGroupView(GROUPS[0]!)).toEqual({ id: 'b@g.us', name: 'Beta', participants: 3, status: 'announce', announce: true, communityId: null })
+    expect(toGroupView(GROUPS[0]!)).toEqual({ id: 'b@g.us', name: 'Beta', participants: 3, status: 'announce', announce: true, communityId: null, isAdmin: false })
     expect(toGroupView(GROUPS[1]!)).toMatchObject({ status: 'open', communityId: 'c@g.us' })
   })
 

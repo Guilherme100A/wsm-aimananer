@@ -157,6 +157,8 @@ Toda transição grava uma linha em `message_events`.
 | `CONTACT_NOT_ALLOWED` | 403 | opt-out ou sem consentimento |
 | `WARMUP_LIMIT` | 429 | limite diário de warm-up atingido |
 | `RATE_LIMIT` | 429 | limite de taxa atingido |
+| `GROUP_NOT_FOUND` | 404 | grupo inexistente para a sessão (T20) |
+| `NOT_GROUP_ADMIN` | 403 | a sessão não é admin do grupo (T20) |
 
 Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … } }`.
 

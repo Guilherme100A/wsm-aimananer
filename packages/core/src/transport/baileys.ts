@@ -9,6 +9,8 @@ import {
   TransportNotConnectedError,
   type ConnectOptions,
   type DisconnectKind,
+  type GroupParticipantResult,
+  type GroupParticipantStatus,
   type GroupSummary,
   type IncomingMessage,
   type OutgoingContent,
@@ -86,6 +88,20 @@ export interface BaileysSocketLike {
   requestPairingCode(phoneNumber: string): Promise<string>
   logout(msg?: string): Promise<void>
   end(error: Error | undefined): void | Promise<void>
+  /** T20 — `groupParticipantsUpdate(jid, participants, 'add')`. Opcional nos mocks antigos. */
+  groupParticipantsUpdate?(jid: string, participants: string[], action: 'add'): Promise<Array<{ status?: string; jid?: string }>>
+  /** Conta autenticada (para saber se é admin dos grupos). */
+  user?: { id?: string; lid?: string } | null
+}
+
+/** Participante de grupo no formato do Baileys (`GroupParticipant`). */
+export interface BaileysGroupParticipantLike {
+  id?: string
+  lid?: string
+  phoneNumber?: string
+  admin?: 'admin' | 'superadmin' | null
+  isAdmin?: boolean
+  isSuperAdmin?: boolean
 }
 
 export interface BaileysGroupLike {
@@ -155,15 +171,48 @@ export function toIncomingMessage(raw: RawMessage): IncomingMessage | undefined 
   return msg
 }
 
-function toGroupSummary(g: BaileysGroupLike): GroupSummary {
+/** JID sem o sufixo de dispositivo (`5511...:12@s.whatsapp.net` → `5511...@s.whatsapp.net`). */
+export function normalizeJid(jid: string): string {
+  return jid.replace(/:\d+@/, '@')
+}
+
+/** A conta (ids próprios) é admin/superadmin do grupo? */
+export function isGroupAdmin(participants: unknown[] | undefined, ownIds: ReadonlySet<string>): boolean {
+  if (!participants || ownIds.size === 0) return false
+  return participants.some((raw) => {
+    const p = raw as BaileysGroupParticipantLike
+    const ids = [p.id, p.lid, p.phoneNumber].filter((v): v is string => typeof v === 'string').map(normalizeJid)
+    if (!ids.some((id) => ownIds.has(id))) return false
+    return p.admin === 'admin' || p.admin === 'superadmin' || p.isAdmin === true || p.isSuperAdmin === true
+  })
+}
+
+function toGroupSummary(g: BaileysGroupLike, ownIds: ReadonlySet<string> = new Set()): GroupSummary {
   const summary: GroupSummary = {
     id: g.id,
     name: g.subject ?? '',
     participants: g.size ?? g.participants?.length ?? 0,
     announce: g.announce === true,
+    isAdmin: isGroupAdmin(g.participants, ownIds),
   }
   if (g.linkedParent) summary.communityId = g.linkedParent
   return summary
+}
+
+/** T20 — código do Baileys por participante → status normalizado. */
+export function mapParticipantStatus(code: number | undefined): GroupParticipantStatus {
+  if (code === 200) return 'added'
+  if (code === 409) return 'already_member'
+  if (code === 403) return 'not_allowed'
+  if (code === 404) return 'group_not_found'
+  return 'failed'
+}
+
+/** T20 — erro do grupo inteiro (IQ de erro) → status normalizado: 404 item-not-found, 401/403 sem permissão de admin. */
+export function mapGroupErrorStatus(code: number | undefined): GroupParticipantStatus {
+  if (code === 404) return 'group_not_found'
+  if (code === 401 || code === 403) return 'not_admin'
+  return 'failed'
 }
 
 export class BaileysTransport extends TransportEmitter implements WaTransport {
@@ -275,7 +324,30 @@ export class BaileysTransport extends TransportEmitter implements WaTransport {
 
   async fetchGroups(): Promise<GroupSummary[]> {
     const groups = await this.requireSocket().groupFetchAllParticipating()
-    return Object.values(groups).map(toGroupSummary)
+    const own = new Set([this.sock?.user?.id, this.sock?.user?.lid].filter((v): v is string => typeof v === 'string').map(normalizeJid))
+    return Object.values(groups).map((g) => toGroupSummary(g, own))
+  }
+
+  /** T20 — adiciona UM participante (`groupParticipantsUpdate(..., 'add')`). Erros do grupo viram status. */
+  async addGroupParticipant(groupId: string, jid: string): Promise<GroupParticipantResult[]> {
+    const sock = this.requireSocket()
+    if (!sock.groupParticipantsUpdate) throw new Error('groupParticipantsUpdate not available in this socket')
+    let res: Array<{ status?: string; jid?: string }>
+    try {
+      res = await sock.groupParticipantsUpdate(groupId, [jid], 'add')
+    } catch (err) {
+      const code = disconnectStatusCode(err) ?? numericData(err)
+      const out: GroupParticipantResult = { jid, status: mapGroupErrorStatus(code) }
+      if (code !== undefined) out.code = code
+      return [out]
+    }
+    if (!res?.length) return [{ jid, status: 'failed' }]
+    return res.map((r) => {
+      const code = r.status !== undefined && /^\d+$/.test(r.status) ? Number(r.status) : undefined
+      const out: GroupParticipantResult = { jid: r.jid ?? jid, status: mapParticipantStatus(code) }
+      if (code !== undefined) out.code = code
+      return out
+    })
   }
 
   /** Desloga o dispositivo; o Baileys emite `connection` close com reason `loggedOut`. */
@@ -292,4 +364,12 @@ export class BaileysTransport extends TransportEmitter implements WaTransport {
     this.connected = false
     if (sock) await sock.end(undefined)
   }
+}
+
+/** Código numérico em `error.data` (algumas versões do Baileys guardam o código do IQ ali). */
+function numericData(err: unknown): number | undefined {
+  const data = (err as { data?: unknown } | null)?.data
+  if (typeof data === 'number') return data
+  const n = Number((data as { code?: unknown } | null | undefined)?.code)
+  return Number.isFinite(n) && n > 0 ? n : undefined
 }

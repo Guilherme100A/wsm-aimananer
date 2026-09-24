@@ -65,6 +65,22 @@ export interface GroupSummary {
   announce: boolean
   /** Grupo pertencente a uma comunidade (JID da comunidade). */
   communityId?: string
+  /** T20 — a conta desta sessão é admin (ou superadmin) do grupo. */
+  isAdmin?: boolean
+}
+
+/**
+ * T20 — resultado por participante de addGroupParticipant, normalizado a partir do Baileys
+ * (groupParticipantsUpdate 'add'): 200 → added, 409 → already_member, 403 por participante → not_allowed
+ * (privacidade do número), erro do grupo 401/403 → not_admin, 404 → group_not_found, resto → failed.
+ */
+export type GroupParticipantStatus = 'added' | 'already_member' | 'not_admin' | 'group_not_found' | 'not_allowed' | 'failed'
+
+export interface GroupParticipantResult {
+  jid: string
+  status: GroupParticipantStatus
+  /** Código original do WhatsApp/Baileys, quando houver. */
+  code?: number
 }
 
 export interface TransportEvents {
@@ -87,6 +103,8 @@ export interface WaTransport {
   on(event: 'receipt', cb: (r: ReceiptUpdate) => void): void
   sendMessage(to: string, content: OutgoingContent): Promise<{ messageId: string }>
   fetchGroups(): Promise<GroupSummary[]>
+  /** T20 — adiciona UM participante a um grupo (ação manual do admin). Só lança TransportNotConnectedError. */
+  addGroupParticipant(groupId: string, jid: string): Promise<GroupParticipantResult[]>
   logout(): Promise<void>
   close(): Promise<void>
 }

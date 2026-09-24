@@ -32,6 +32,7 @@ import { createTransportFactory, SessionManager, type TransportFactory } from '.
 import { loadWorkerConfig, type WorkerConfig } from './config'
 import { FakeControl } from './fake-control'
 import { startInternalServer, type InternalServer } from './internal-server'
+import { createBridgeTargets } from './bridge-targets'
 import { recoverOrphanJobs, type RecoverOrphanJobsResult } from './orphan-jobs'
 import { reconcileProcessing, type ReconcileResult } from './reconcile'
 import { createGuardedDeliver, redisInflightStore, type InflightStore } from './send-guard'
@@ -230,7 +231,7 @@ export async function startWorker(opts: StartWorkerOptions = {}): Promise<Worker
       port: config.internalPort,
       host: config.internalHost,
       token: config.internalToken,
-      targets: { sessions: manager, messages: queue, health: monitor },
+      targets: createBridgeTargets({ manager, queue, health: monitor, db }),
       ...(fake ? { fake } : {}),
       logger,
     })

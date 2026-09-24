@@ -61,8 +61,8 @@ describe('/api/sessions/:id/groups', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { items: unknown[] }
     expect(body.items).toEqual([
-      { id: 'a@g.us', name: 'Alpha', participants: 5, status: 'announce', announce: true, communityId: null },
-      { id: 'z@g.us', name: 'Zeta', participants: 2, status: 'open', announce: false, communityId: null },
+      { id: 'a@g.us', name: 'Alpha', participants: 5, status: 'announce', announce: true, communityId: null, isAdmin: false },
+      { id: 'z@g.us', name: 'Zeta', participants: 2, status: 'open', announce: false, communityId: null, isAdmin: false },
     ])
     expect(await db.select().from(auditLogs)).toHaveLength(0)
   })

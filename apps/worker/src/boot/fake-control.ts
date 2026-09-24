@@ -99,7 +99,7 @@ export class FakeControl implements SendDelays {
   // ---- simulação ---------------------------------------------------------------------
   state(sessionId: string) {
     const t = this.last(sessionId)
-    if (!t) return { exists: false, bootId: this.bootId, connected: false, connectCalls: 0, lastConnect: null, sent: [] }
+    if (!t) return { exists: false, bootId: this.bootId, connected: false, connectCalls: 0, lastConnect: null, sent: [], groupAdds: [] }
     const lc = t.lastConnect
     return {
       exists: true,
@@ -111,6 +111,8 @@ export class FakeControl implements SendDelays {
         ? { sessionId: lc.sessionId, ...(lc.proxyUrl ? { proxyUrl: lc.proxyUrl } : {}), ...(lc.pairingPhone ? { pairingPhone: lc.pairingPhone } : {}) }
         : null,
       sent: t.sent.map((m) => ({ messageId: m.messageId, to: m.to, content: m.content, at: m.at.toISOString() })),
+      // T20: chamadas de adição a grupo (groupId, jid), em ordem.
+      groupAdds: t.groupAdds.map((a) => ({ ...a })),
     }
   }
 
