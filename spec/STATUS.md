@@ -18,14 +18,16 @@
 | 5 | T09 | Motor de segurança | ACCEPTED | Brasa | Prisma | 1 | 58 testes; ANTIBAN_MODE default real; migration 0001 session_limits; ciclo 1 = regressão em testes unitários do db corrigida |
 | 5 | T11 | Alertas | ACCEPTED | Malho | Lince | 0 | 28 testes; segredos cifrados (T02); POST /api/webhooks/:id/test extra |
 | 5 | T14 | Grupos | ACCEPTED | Brasa | Prisma | 0 | 24 testes; adiantado; única ação manual: POST /groups/refresh (auditada) |
-| 6 | T13 | IA assistiva | TODO | | | 0 | |
+| 6 | T13 | IA assistiva | ACCEPTED | Malho | Lince | 0 | 28 testes; inbound persistido; opt-out ligado; migration 0002 suggestions |
 | 6 | T15 | Observabilidade | ACCEPTED | Cinzel | Radar | 0 | 16 testes; /metrics Prometheus, healthchecks nos 5 serviços, logs JSON com session_id |
 | 6 | T12 | Dashboard | ACCEPTED | Malho | Lince | 0 | 23 testes (Playwright); commit junto com T09/T15 |
-| 7 | T16 | Integração E2E | TODO | | | 0 | |
+| 7 | T16 | Integração E2E | IN_PROGRESS | Brasa | Prisma | 0 | adiantado; boot do worker, ponte api↔worker, reconciliação processing; integração do T13 depois |
 
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · infra · Causa raiz dos OOM: vitest abre 1 fork por núcleo (16). verify.mjs agora exporta VITEST_MAX_WORKERS=4 (sobrescrevível). A VM do Docker (vmmemWSL) chegou a 6 GB após builds do T16. · Orquestrador
+- 2026-09-24 · T13 · Lacuna fechada: inbound persistido em messages (direction=inbound, status delivered, transport_message_id; enum não alterado para não quebrar MESSAGE_TRANSITIONS do T08). Opt-out do T07 (createOptOutHandler) não estava ligado em lugar nenhum; agora é chamado no attachAi antes da IA. Migration aditiva 0002_suggestions. Boot (T16) chama attachAi e remove o wiring próprio de opt-out. · Orquestrador
 - 2026-09-24 · regressão · Regressão completa estoura a memória da máquina (exit 134/0xC0000409). Checks que falharam foram re-executados um a um: todos ok, exceto uma regressão real (testes unitários do db fixavam 9 tabelas/1 migration) corrigida pelo Brasa. verify list: 15/15 tarefas entregues com ok/ok. · Orquestrador
 - 2026-09-24 · T15 · Aceita edição fora da lista shared: apps/api/src/index.ts +export observability. @opentelemetry/api adicionado a db/api/worker para unificar a variante do drizzle-orm. Pendente T16: server.ts usar createApiLogger; entrypoint do worker chamar startObservabilityServer (WORKER_HEALTH_PORT=9464), senão o healthcheck do worker fica unhealthy. · Orquestrador
 - 2026-09-24 · T12→T16 · Lacuna de API vista no dashboard: mensagens recebidas (inbound) não são persistidas e MessageView não tem direction; não há histórico de health_events via API. O dashboard contorna no cliente (health 24h e amostragem por polling). Proposta p/ T16: persistir inbound com direction e GET /api/sessions/:id/health/events. · Orquestrador

@@ -55,9 +55,12 @@ function walk(dir, out = []) {
   return out
 }
 
+// Limita os forks do vitest: o default (1 por núcleo = 16 aqui) esgota a memória da máquina de dev.
+const CHILD_ENV = { ...process.env, VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS ?? '4' }
+
 function run(cmd, { quiet = false } = {}) {
   const started = Date.now()
-  const res = spawnSync(cmd, { cwd: ROOT, shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
+  const res = spawnSync(cmd, { cwd: ROOT, shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, env: CHILD_ENV })
   const output = `${res.stdout ?? ''}${res.stderr ?? ''}`
   if (!quiet && res.status !== 0) process.stdout.write(C.dim + output.split('\n').slice(-40).join('\n') + C.r + '\n')
   return { cmd, code: res.status ?? 1, ms: Date.now() - started, tail: output.split('\n').slice(-40).join('\n') }

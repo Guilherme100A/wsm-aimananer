@@ -12,6 +12,7 @@ import { messagesRoutes } from './messages'
 import { limitsRoutes } from './messages-limits'
 import { metricsRoutes } from '../observability/metrics-route'
 import { webhooksRoutes } from './webhooks'
+import { suggestionsRoutes } from './suggestions'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', healthRoutes(deps))
@@ -26,4 +27,6 @@ export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', webhooksRoutes(deps))
   // T15 — GET /metrics (público, como /health)
   app.route('/', metricsRoutes(deps))
+  // T13 — sugestões da IA com aprovação humana
+  app.route('/', suggestionsRoutes(deps))
 }

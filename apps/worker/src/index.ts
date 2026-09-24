@@ -25,3 +25,6 @@ export * from './alerts'
 
 // T15 — observabilidade (createWorkerLogger, startObservabilityServer, attachMetrics)
 export * from './observability'
+
+// T13 — IA assistiva (attachAi: mensagem recebida → persistência inbound → opt-out → sugestão pendente)
+export * from './ai'

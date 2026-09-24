@@ -33,6 +33,8 @@ const TABLES = [
   'audit_logs',
   // T09 — migration 0001_session_limits
   'session_limits',
+  // T13 — migration 0002_suggestions
+  'suggestions',
 ]
 
 /** Quantidade de migrations declaradas no journal do drizzle (cresce a cada migration nova). */

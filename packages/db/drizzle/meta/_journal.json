@@ -15,6 +15,13 @@
       "when": 1790231232092,
       "tag": "0001_session_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790233588360,
+      "tag": "0002_suggestions",
+      "breakpoints": true
     }
   ]
 }
