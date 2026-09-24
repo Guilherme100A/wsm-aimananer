@@ -21,3 +21,7 @@ export * from './session'
 
 // T14 — grupos (listagem via fetchGroups, SessionNotConnectedError)
 export * from './groups'
+
+// T10 — warm-up (cronograma baseado no baileys-antiban) e Health Score/HealthService
+export * from './warmup'
+export * from './health'

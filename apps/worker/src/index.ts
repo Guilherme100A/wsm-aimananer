@@ -13,3 +13,6 @@ export * from './proxy'
 
 // T05 — Session Manager (SessionManager, factories de transporte)
 export * from './sessions'
+
+// T10 — Health Monitor (hooks onConnected/onDisconnected/resumeState do SessionManager, evento `alert`)
+export * from './health'

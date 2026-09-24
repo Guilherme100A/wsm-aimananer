@@ -13,8 +13,8 @@
 | 2 | T06 | Proxies | ACCEPTED | Malho | Lince | 0 | 26 testes; DELETE de proxy vinculado→409; T05 deve usar connectSession/resolveSessionProxy |
 | 2 | T07 | Contatos e consentimento | ACCEPTED | Cinzel | Radar | 0 | 27 testes; decisões: dup phone→400, opt-out de desconhecido cria contato bloqueado, import não sobrescreve |
 | 3 | T05 | Session Manager | ACCEPTED | Brasa | Prisma | 0 | 55 testes; hooks onConnected/onDisconnected e resumeState p/ T10; getTransport(id) p/ T08/T14 |
-| 4 | T08 | Fila de mensagens | IN_PROGRESS | Cinzel | Radar | 0 | |
-| 4 | T10 | Warm-up e Health Monitor | IN_PROGRESS | Malho | Lince | 0 | |
+| 4 | T08 | Fila de mensagens | REJECTED | Cinzel | Radar | 1 | AC-T08-05: createWorker desfaz pause() explícito (corrida); devolvido ao Cinzel |
+| 4 | T10 | Warm-up e Health Monitor | ACCEPTED | Malho | Lince | 0 | 27 testes; HealthMonitor.attach(manager), evento alert p/ T11, recordSignal p/ T09 |
 | 5 | T09 | Motor de segurança | TODO | | | 0 | |
 | 5 | T11 | Alertas | TODO | | | 0 | |
 | 5 | T14 | Grupos | ACCEPTED | Brasa | Prisma | 0 | 24 testes; adiantado; única ação manual: POST /groups/refresh (auditada) |
@@ -26,6 +26,8 @@
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · T08 · Decisões aceitas: DEGRADED segura envios (3.4); cancel de mensagem inexistente→404 NOT_FOUND (lacuna 3.4). Risco p/ T16: worker que cai no meio do envio deixa mensagem em processing (sem reenvio para evitar duplicata). · Orquestrador
+- 2026-09-24 · T10 · Warm-up = WarmUpConfig do baileys-antiban (7 dias, 20/dia inicial, x1.8), configurável por WARMUP_*; pacote baileys-antiban fica para o T09. health_events usam now() do banco. · Orquestrador
 - 2026-09-24 · T14 · Decisões aceitas: status de grupo announce|open; 409 SESSION_NOT_CONNECTED fora de WARMING/STABLE (inclui DEGRADED/PAUSED, SPEC 3.4 literal); única ação manual = refresh (WaTransport só tem fetchGroups). · Orquestrador
 - 2026-09-24 · T05 · Decisões aceitas: mesmo estado não é transição (logout em DISCONNECTED→409); restart mantém estado, 409 em DISCONNECTED; QR/pairing só em NEW/DISCONNECTED; resume PAUSED→WARMING (T10 pode injetar resumeState); forbidden em NEW→DISCONNECTED + forbidden_403; loggedOut apaga credenciais; timeout de pairing→500 (lacuna na 3.4). Entrypoint de boot do worker fica para T16. · Orquestrador
 - 2026-09-24 · equipe · Maestri fechou ~01:37; agentes reiniciados vazios; T05 re-despachado sem perda. · Orquestrador
