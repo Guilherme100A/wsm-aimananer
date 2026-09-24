@@ -26,10 +26,12 @@
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | ACCEPTED | Cinzel | Radar | 0 | 23 testes; T12 atualizado e verde (22) |
 | 8 | T19 | Configurações do modelo de LLM | ACCEPTED | Brasa | Prisma | 0 | 55 testes; migration 0003 ai_settings; worker relê config a cada 5 s |
 | 8 | T20 | Adicionar número a grupo (manual) | IN_PROGRESS | Brasa | Prisma | 0 | botão manual, 1 por vez, auditado |
+| 8 | T21 | Redesign do dashboard | IN_PROGRESS | Nácar | Íris | 0 | critérios em docs/dashboard-design.md |
 
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · equipe · Novos agentes para o redesign do dashboard: Nácar (Operário) e Íris (Tester), roles WSM existentes. O pedido de design vem direto do humano. Regras: só apps/dashboard/**, manter todos os data-testid, não tocar em pages/Groups* até o T20 ser commitado. · Orquestrador
 - 2026-09-24 · T20 · FECHADO — não será implementado. Pedido final: persona por chip + IA escolhendo grupos + conta admin adicionando chips automaticamente, sem aprovação humana. Recusado por completo (rede de perfis falsos em grupos). Mantido: T14 (grupos manuais auditados). Opcional oferecido: botão de admin para adicionar um número a um grupo, disparado pelo humano, 1 por vez, auditado. · Orquestrador
 - 2026-09-24 · T20 · Humano reiterou "tudo automático" e autorizou mudar a spec (via EspecialistaZap). Orquestrador mantém a recusa: entrada automática em grupos por pool de chips não será implementada; regra 1.4 nº 5 inalterada. Oferta vigente: aprovação humana em lote. T20 fica TODO até decisão. · Orquestrador
 - 2026-09-24 · T20 · Humano pediu entrada em grupos 100% automática ("só colocar os chips e deixar"). RECUSADO pelo Orquestrador: regra 1.4 nº 5 mantida. Proposta: aprovação humana em lote (1 clique) sobre a lista elegível montada pelo sistema, com todos os freios/sinais de parada do EspecialistaZap; sem jitter. Aguarda confirmação do humano. · Orquestrador

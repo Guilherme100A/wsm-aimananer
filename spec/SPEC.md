@@ -191,6 +191,7 @@ Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … 
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | T17 (contrato), T12 |
 | 8 | T19 | Configurações do modelo de LLM | T13, T12 |
 | 8 | T20 | Adicionar número a grupo (manual) | T14, T16, T18 |
+| 8 | T21 | Redesign do dashboard | T12, T18, T19 |
 
 ---
 
@@ -530,6 +531,19 @@ interface WaTransport {
   - O resultado aparece na tela: sucesso, já é membro, não é admin ou limite de 1 por minuto.
   - Em grupos em que a sessão não é admin, o botão fica desabilitado, com uma dica explicando o motivo.
 - **AC-T20-07** Continuam valendo o F-NO-GROUP-JOIN (`groupAcceptInvite` não aparece no código), o AC-T13-06 e a regra 1.4 nº 5.
+
+
+### T21 — Redesign do dashboard
+**Origem:** pedido do humano em 2026-09-24. Os critérios foram definidos pelo Operário (Nácar) e pelo Tester (Íris), e a **fonte oficial é `docs/dashboard-design.md`**.
+**Paths:** `apps/dashboard/**`, `docs/dashboard-design.md`
+**Critérios de aceitação** (texto completo em docs/dashboard-design.md)
+- **AC-T21-01** ver docs/dashboard-design.md.
+- **AC-T21-02** ver docs/dashboard-design.md.
+- **AC-T21-03** ver docs/dashboard-design.md.
+- **AC-T21-04** ver docs/dashboard-design.md.
+- **AC-T21-05** ver docs/dashboard-design.md.
+- **AC-T21-06** ver docs/dashboard-design.md.
+- **AC-T21-07** ver docs/dashboard-design.md.
 
 ---
 

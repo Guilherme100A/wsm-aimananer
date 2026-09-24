@@ -190,6 +190,13 @@ export const TASKS = [
     commands: [...std('core', 'api', 'worker', 'dashboard'), 'pnpm --filter @wsm/dashboard build'],
     infra: true,
   },
+  {
+    id: 'T21', title: 'Redesign do dashboard', wave: 8, deps: ['T12', 'T18', 'T19'],
+    paths: ['apps/dashboard/**', 'docs/dashboard-design.md'],
+    requiredFiles: ['apps/dashboard/src/main.tsx'],
+    commands: [...std('dashboard'), 'pnpm --filter @wsm/dashboard build'],
+    infra: false,
+  },
 ]
 
 // Regras proibidas — aplicadas em TODO --role operario (SPEC 1.4).
