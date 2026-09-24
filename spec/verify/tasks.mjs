@@ -176,6 +176,13 @@ export const TASKS = [
     commands: [...std('dashboard'), 'pnpm --filter @wsm/dashboard build'],
     infra: false,
   },
+  {
+    id: 'T19', title: 'Configurações do modelo de LLM', wave: 8, deps: ['T13', 'T12'],
+    paths: ['packages/core/src/ai/**', 'apps/worker/src/ai/**', 'apps/worker/src/boot/**', 'apps/api/src/routes/ai-settings*', 'packages/db/src/schema/**', 'packages/db/drizzle/**', 'apps/dashboard/src/**', '.env.example', 'docs/ai.md'],
+    requiredFiles: ['apps/api/src/routes/ai-settings.ts'],
+    commands: [...std('core', 'api', 'worker', 'dashboard'), 'pnpm --filter @wsm/dashboard build'],
+    infra: true,
+  },
 ]
 
 // Regras proibidas — aplicadas em TODO --role operario (SPEC 1.4).

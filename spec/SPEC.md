@@ -189,6 +189,7 @@ Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … 
 | 7 | T16 | Integração E2E e Docker Compose completo | todas |
 | 8 | T17 | Login admin e proxy na sessão (API) | T03, T05, T06 |
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | T17 (contrato), T12 |
+| 8 | T19 | Configurações do modelo de LLM | T13, T12 |
 
 ---
 
@@ -487,6 +488,28 @@ interface WaTransport {
   - O detalhe da sessão mostra o proxy (senha mascarada) e permite editar ou remover via `PATCH` (AC-T17-04), avisando que exige restart.
   - A lista de sessões mostra o IP do proxy de cada número.
 - **AC-T18-04** `pnpm --filter @wsm/dashboard build` passa. O smoke Playwright passa: login admin/nimda → adicionar número com proxy → QR → conectado → detalhe mostra o proxy.
+
+
+### T19 — Configurações do modelo de LLM (painel)
+**Origem:** pedido do humano em 2026-09-24: uma seção no painel para configurar a API e as opções do modelo de LLM usado pela IA assistiva (T13).
+**Paths:** `packages/core/src/ai/**` (aditivo), `apps/worker/src/ai/**`, `apps/worker/src/boot/**` (só o ponto de ligação da IA), `apps/api/src/routes/ai-settings*`, `packages/db/src/schema/**` + `packages/db/drizzle/**` (migration aditiva), `apps/dashboard/src/pages/AiSettings*`, `apps/dashboard/src/**` (só o item de menu e a rota), `.env.example` (aditivo), `docs/ai.md`
+**Critérios de aceitação**
+- **AC-T19-01** Tabela `ai_settings` (linha única) com os campos:
+  - `provider` (`anthropic`), `apiKey` (cifrada com a cripto do T02), `modelSmall`, `modelLarge`, `confidenceThreshold` (0–1), `maxTokens`, `timeoutMs`, `enabled`, `updatedAt`.
+  - Sem linha no banco, valem as variáveis de ambiente do T13 (`AI_*`). Com linha, o banco tem prioridade campo a campo.
+- **AC-T19-02** `GET /api/ai/settings` devolve a configuração efetiva com `hasApiKey` e a origem de cada campo (`db` ou `env`). **Nunca** devolve a chave, nem cifrada.
+  - `PUT /api/ai/settings` valida com zod (modelos não vazios, limiar entre 0 e 1, `maxTokens` e `timeoutMs` dentro de limites seguros) e é auditado sem a chave.
+  - `apiKey: null` remove a chave, e omitir o campo a mantém.
+- **AC-T19-03** O worker aplica a configuração nova **sem restart**:
+  - o `AiAssistant` relê as configurações (cache curto ou notificação) e troca provedor e modelos;
+  - `enabled=false` → nenhuma chamada ao provedor, só o fallback determinístico;
+  - o cache de classificação do T13 é invalidado quando o modelo muda.
+- **AC-T19-04** `POST /api/ai/settings/test` faz uma chamada mínima ao provedor com a configuração salva (ou com a enviada no body, sem salvar) e devolve `{ ok, model, latencyMs, error? }`, com o erro sanitizado e sem a chave. Nos testes, o provedor é sempre falso e injetado.
+- **AC-T19-05** No dashboard, a página **"IA / Modelo LLM"** fica no menu e tem:
+  - campo da chave de API mascarado (mostra só "configurada" ou "não configurada", com os botões substituir e remover);
+  - os modelos pequeno e grande, o limiar, o limite de tokens, o timeout e o botão ativar/desativar;
+  - o botão "Testar conexão" e a origem de cada valor (banco ou env).
+- **AC-T19-06** Continua valendo o AC-T13-06: a IA só age a partir de uma mensagem recebida real. As configurações não criam nenhum caminho novo de geração ou envio espontâneo. **Entrada automática em grupos continua proibida** (AC-T14-03 e F-NO-GROUP-JOIN).
 
 ---
 
