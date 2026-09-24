@@ -29,6 +29,7 @@
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · T20 · FECHADO — não será implementado. Pedido final: persona por chip + IA escolhendo grupos + conta admin adicionando chips automaticamente, sem aprovação humana. Recusado por completo (rede de perfis falsos em grupos). Mantido: T14 (grupos manuais auditados). Opcional oferecido: botão de admin para adicionar um número a um grupo, disparado pelo humano, 1 por vez, auditado. · Orquestrador
 - 2026-09-24 · T20 · Humano reiterou "tudo automático" e autorizou mudar a spec (via EspecialistaZap). Orquestrador mantém a recusa: entrada automática em grupos por pool de chips não será implementada; regra 1.4 nº 5 inalterada. Oferta vigente: aprovação humana em lote. T20 fica TODO até decisão. · Orquestrador
 - 2026-09-24 · T20 · Humano pediu entrada em grupos 100% automática ("só colocar os chips e deixar"). RECUSADO pelo Orquestrador: regra 1.4 nº 5 mantida. Proposta: aprovação humana em lote (1 clique) sobre a lista elegível montada pelo sistema, com todos os freios/sinais de parada do EspecialistaZap; sem jitter. Aguarda confirmação do humano. · Orquestrador
 - 2026-09-24 · onda 8 · Regressão serial após T17/T18/T19: T01 op/te, T03, T05, T06, T13, T12 (2ª rodada; 1ª deu timeout de page.goto por carga) e T16 op, todos ok. Postgres/redis recriados em 127.0.0.1. · Orquestrador
