@@ -8,6 +8,7 @@ import { proxiesRoutes } from './proxies'
 import { sessionsRoutes } from './sessions'
 import { groupsRoutes } from './groups'
 import { healthSessionRoutes } from './health-session'
+import { webhooksRoutes } from './webhooks'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', healthRoutes(deps))
@@ -16,4 +17,5 @@ export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', sessionsRoutes(deps))
   app.route('/', groupsRoutes(deps))
   app.route('/', healthSessionRoutes(deps))
+  app.route('/', webhooksRoutes(deps))
 }

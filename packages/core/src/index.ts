@@ -25,3 +25,6 @@ export * from './groups'
 // T10 — warm-up (cronograma baseado no baileys-antiban) e Health Score/HealthService
 export * from './warmup'
 export * from './health'
+
+// T11 — alertas (ALERT_EVENTS, signWebhookBody, WebhookService, AlertDispatcher)
+export * from './alerts'

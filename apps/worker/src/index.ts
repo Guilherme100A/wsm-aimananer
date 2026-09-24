@@ -16,3 +16,6 @@ export * from './sessions'
 
 // T10 — Health Monitor (hooks onConnected/onDisconnected/resumeState do SessionManager, evento `alert`)
 export * from './health'
+
+// T11 — alertas (consome `alert` do HealthMonitor e `proxy_unavailable` do ProxyChecker; entrega via webhooks)
+export * from './alerts'

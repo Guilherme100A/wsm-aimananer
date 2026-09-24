@@ -19,9 +19,14 @@
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "@wsm/db": "workspace:*",
+    "bullmq": "^6.3.8",
     "drizzle-orm": "^0.45.3",
     "https-proxy-agent": "^9.1.0",
+    "nodemailer": "^10.0.10",
     "pino": "^10.3.1",
     "socks-proxy-agent": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2"
   }
 }
