@@ -14,4 +14,5 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /out ./
 USER node
+EXPOSE 3000
 CMD ["node", "dist/server.js"]

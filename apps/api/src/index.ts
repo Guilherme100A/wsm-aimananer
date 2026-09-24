@@ -16,3 +16,6 @@ export { loadConfig, type ApiConfig } from './config'
 
 // T15 — observabilidade (createApiLogger, metricsRoutes, sessionLogContext)
 export * from './observability'
+
+// T16 — ponte API → worker (clientes com as mesmas interfaces das rotas)
+export * from './bridge/client'

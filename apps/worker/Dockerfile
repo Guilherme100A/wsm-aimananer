@@ -14,4 +14,5 @@ ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /out ./
 USER node
-CMD ["node", "dist/index.js"]
+EXPOSE 9464 9465
+CMD ["node", "dist/main.js"]

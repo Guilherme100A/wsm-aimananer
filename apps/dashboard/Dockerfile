@@ -7,5 +7,6 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @wsm/dashboard build
 
 FROM nginx:1.27-alpine AS runtime
+COPY apps/dashboard/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/apps/dashboard/dist /usr/share/nginx/html
 EXPOSE 80

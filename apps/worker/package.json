@@ -4,18 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --conditions=development src/index.ts",
-    "start": "node dist/index.js",
-    "build": "tsup src/index.ts --format esm --target node20 --platform node --clean",
+    "dev": "tsx watch --conditions=development src/main.ts",
+    "start": "node dist/main.js",
+    "build": "tsup src/index.ts src/main.ts --format esm --target node20 --platform node --clean",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.1",
     "@opentelemetry/api": "^1.9.1",
     "@wsm/core": "workspace:*",
     "@wsm/db": "workspace:*",
+    "bullmq": "^6.3.8",
     "drizzle-orm": "^0.45.3",
+    "hono": "^4.13.9",
+    "ioredis": "^6.0.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

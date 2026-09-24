@@ -26,7 +26,8 @@ export interface HttpMock {
   close(): Promise<void>
 }
 
-export async function startHttpMock(): Promise<HttpMock> {
+/** `host`: '127.0.0.1' (default) ou '0.0.0.0' para receber de containers via host.docker.internal (T16). */
+export async function startHttpMock(host = '127.0.0.1'): Promise<HttpMock> {
   const requests: MockRequest[] = []
   const mock = {
     requests,
@@ -50,7 +51,7 @@ export async function startHttpMock(): Promise<HttpMock> {
       res.end(status < 300 ? '{"ok":true}' : '{"ok":false}')
     })
   })
-  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
+  await new Promise<void>((r) => server.listen(0, host, r))
   mock.port = (server.address() as AddressInfo).port
   mock.url = `http://127.0.0.1:${mock.port}`
   mock.on = (prefix) => requests.filter((r) => r.path.startsWith(prefix))

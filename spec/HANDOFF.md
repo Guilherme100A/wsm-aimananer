@@ -1,4 +1,6 @@
-# HANDOFF — retomada do wa-session-manager
+# HANDOFF — wa-session-manager
+
+> **ATUALIZAÇÃO FINAL (2026-09-24):** as 17 tarefas estão ACCEPTED e commitadas. O conteúdo abaixo é histórico. Pendências opcionais: (1) rodar de novo o `node spec/verify/verify.mjs T16 --role tester` isolado, depois da regressão interrompida por memória; (2) se quiser, limitar a VM do Docker via .wslconfig. Infra: Docker (spec/INFRA.md). Rode testes com VITEST_MAX_WORKERS=4, que o verify.mjs já aplica.
 
 > Escrito pelo Orquestrador em 2026-09-24, por volta de 02:40, antes de o humano fechar o Maestri.
 > O estado de cada tarefa está em `spec/STATUS.md`. Este arquivo diz **como continuar**.

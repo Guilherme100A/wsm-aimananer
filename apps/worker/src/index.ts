@@ -28,3 +28,6 @@ export * from './observability'
 
 // T13 — IA assistiva (attachAi: mensagem recebida → persistência inbound → opt-out → sugestão pendente)
 export * from './ai'
+
+// T16 — boot do worker (startWorker), ponte interna API ↔ worker e controle do FakeTransport (WA_TRANSPORT=fake)
+export * from './boot'

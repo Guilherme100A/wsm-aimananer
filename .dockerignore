@@ -1,0 +1,17 @@
+# Contexto de build dos Dockerfiles (raiz do monorepo): só o necessário para instalar e compilar.
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+**/*.log
+.git
+.github
+.maestri
+.env
+.env.*
+!.env.example
+spec
+tests
+docs
+**/*.unit.test.ts
+**/*.test.ts

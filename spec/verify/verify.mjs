@@ -56,7 +56,12 @@ function walk(dir, out = []) {
 }
 
 // Limita os forks do vitest: o default (1 por núcleo = 16 aqui) esgota a memória da máquina de dev.
-const CHILD_ENV = { ...process.env, VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS ?? '4' }
+// Idem para `pnpm -r`: um pacote por vez (tsc/vitest em paralelo em 4 pacotes esgotava o commit).
+const CHILD_ENV = {
+  ...process.env,
+  VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS ?? '4',
+  npm_config_workspace_concurrency: process.env.npm_config_workspace_concurrency ?? '1',
+}
 
 function run(cmd, { quiet = false } = {}) {
   const started = Date.now()

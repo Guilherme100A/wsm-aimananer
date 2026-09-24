@@ -1,20 +1,37 @@
 // Entrypoint HTTP: lê env, cria dependências reais e sobe o servidor.
+// T16: logger de observabilidade (T15), métricas do processo e ponte com o worker (WORKER_INTERNAL_URL).
 import { serve } from '@hono/node-server'
+import { createMetrics } from '@wsm/core'
 import { createDb } from '@wsm/db'
 import { Redis } from 'ioredis'
 import { createApp } from './app'
+import { createWorkerBridge } from './bridge/client'
 import { loadConfig } from './config'
-import { createLogger } from './logger'
+import { createApiLogger } from './observability'
 
 const config = loadConfig()
-const logger = createLogger({ level: config.LOG_LEVEL })
+const logger = createApiLogger({ level: config.LOG_LEVEL })
 const db = createDb(config.DATABASE_URL)
 const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: 1 })
 redis.on('error', (err) => logger.warn({ err: err.message }, 'redis error'))
+const metrics = createMetrics()
 
-const app = createApp({ db, redis, logger, apiToken: config.API_TOKEN })
+const bridge =
+  config.WORKER_INTERNAL_URL && config.INTERNAL_TOKEN ? createWorkerBridge({ url: config.WORKER_INTERNAL_URL, token: config.INTERNAL_TOKEN }) : undefined
+if (!bridge) logger.warn('WORKER_INTERNAL_URL not set: session/queue actions unavailable (database-only mode)')
+
+// T13 (IA assistiva): quando aceito, as rotas /api/suggestions entram pelo registro em routes/index.ts;
+// se precisarem do worker, adicionar o alvo correspondente na ponte (bridge/client.ts + boot/internal-server.ts).
+const app = createApp({
+  db,
+  redis,
+  logger,
+  apiToken: config.API_TOKEN,
+  metrics,
+  ...(bridge ? { sessions: bridge.sessions, messages: bridge.messages, health: bridge.health } : {}),
+})
 const server = serve({ fetch: app.fetch, port: config.PORT, hostname: config.HOST }, (info) => {
-  logger.info({ port: info.port }, 'api listening')
+  logger.info({ port: info.port, worker_bridge: Boolean(bridge) }, 'api listening')
 })
 
 let closing = false
