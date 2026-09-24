@@ -25,6 +25,7 @@
 | 8 | T17 | Login admin e proxy na sessão (API) | ACCEPTED | Malho | Lince | 1 | 37 testes; TRUST_PROXY (mais à direita); portas internas só em 127.0.0.1 |
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | ACCEPTED | Cinzel | Radar | 0 | 23 testes; T12 atualizado e verde (22) |
 | 8 | T19 | Configurações do modelo de LLM | ACCEPTED | Brasa | Prisma | 0 | 55 testes; migration 0003 ai_settings; worker relê config a cada 5 s |
+| 8 | T20 | Adicionar número a grupo (manual) | IN_PROGRESS | Brasa | Prisma | 0 | botão manual, 1 por vez, auditado |
 
 ## Bloqueios e decisões
 

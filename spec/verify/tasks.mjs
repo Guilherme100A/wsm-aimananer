@@ -183,6 +183,13 @@ export const TASKS = [
     commands: [...std('core', 'api', 'worker', 'dashboard'), 'pnpm --filter @wsm/dashboard build'],
     infra: true,
   },
+  {
+    id: 'T20', title: 'Adicionar número a grupo (manual)', wave: 8, deps: ['T14', 'T16', 'T18'],
+    paths: ['packages/core/src/transport/**', 'packages/core/src/groups/**', 'apps/api/src/routes/groups*', 'apps/api/src/bridge/**', 'apps/worker/src/boot/**', 'apps/dashboard/src/**', 'docs/groups.md'],
+    requiredFiles: ['packages/core/src/groups/index.ts'],
+    commands: [...std('core', 'api', 'worker', 'dashboard'), 'pnpm --filter @wsm/dashboard build'],
+    infra: true,
+  },
 ]
 
 // Regras proibidas — aplicadas em TODO --role operario (SPEC 1.4).

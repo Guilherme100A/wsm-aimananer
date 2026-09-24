@@ -190,6 +190,7 @@ Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … 
 | 8 | T17 | Login admin e proxy na sessão (API) | T03, T05, T06 |
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | T17 (contrato), T12 |
 | 8 | T19 | Configurações do modelo de LLM | T13, T12 |
+| 8 | T20 | Adicionar número a grupo (manual) | T14, T16, T18 |
 
 ---
 
@@ -510,6 +511,25 @@ interface WaTransport {
   - os modelos pequeno e grande, o limiar, o limite de tokens, o timeout e o botão ativar/desativar;
   - o botão "Testar conexão" e a origem de cada valor (banco ou env).
 - **AC-T19-06** Continua valendo o AC-T13-06: a IA só age a partir de uma mensagem recebida real. As configurações não criam nenhum caminho novo de geração ou envio espontâneo. **Entrada automática em grupos continua proibida** (AC-T14-03 e F-NO-GROUP-JOIN).
+
+
+### T20 — Adicionar número a um grupo (ação manual do admin)
+**Origem:** pedido do humano em 2026-09-24. Substitui a proposta de entrada automática em grupos, que foi recusada (ver STATUS). É uma ação **manual**, uma por vez: não existe lote, agendamento, escolha de grupos por IA nem entrada automática.
+**Paths:** `packages/core/src/transport/**` (aditivo: método de adicionar participante), `packages/core/src/groups/**`, `apps/api/src/routes/groups*`, `apps/api/src/bridge/**` e `apps/worker/src/boot/**` (só a rota da ponte), `apps/dashboard/src/pages/Groups*`, `apps/dashboard/src/components/**` (aditivo), `docs/groups.md`
+**Critérios de aceitação**
+- **AC-T20-01** `WaTransport.addGroupParticipant(groupId, jid)` usa `groupParticipantsUpdate(..., 'add')` do Baileys e devolve `{ status }` por participante. O `FakeTransport` simula: grupo inexistente, "não é admin", sucesso, e o participante já está no grupo.
+- **AC-T20-02** `POST /api/sessions/:id/groups/:groupId/participants { targetSessionId }` adiciona **um** número.
+  - `targetSessionId` é uma sessão do sistema com telefone.
+  - Não existe variante em lote: um único alvo por requisição, e array → 400.
+  - A sessão `:id` precisa estar em WARMING/STABLE (senão 409 `SESSION_NOT_CONNECTED`) e ser **admin** do grupo (senão 403 `NOT_GROUP_ADMIN`).
+  - Alvo inexistente → 404. Alvo igual à própria sessão → 400.
+- **AC-T20-03** Freio anti-rajada no servidor: no máximo 1 adição por minuto por sessão admin (senão 429 `RATE_LIMIT`). Nenhum código chama a adição a partir de timer, fila ou IA; ela só é disparada pela rota, que exige usuário autenticado.
+- **AC-T20-04** Toda adição, com sucesso ou falha, é auditada como `group.participant.add`, com a sessão admin, o grupo, a sessão alvo, o resultado e o ator.
+- **AC-T20-05** Funciona entre containers: a API chama o worker pela ponte interna do T16, e a rota nova da ponte exige o token interno.
+- **AC-T20-06** No dashboard, na página Grupos, cada grupo em que a sessão selecionada é admin mostra o botão **"Adicionar número"**. O botão abre um diálogo para escolher **uma** sessão do sistema e pede confirmação ("Adicionar <nome/número> ao grupo <grupo>?").
+  - O resultado aparece na tela: sucesso, já é membro, não é admin ou limite de 1 por minuto.
+  - Em grupos em que a sessão não é admin, o botão fica desabilitado, com uma dica explicando o motivo.
+- **AC-T20-07** Continuam valendo o F-NO-GROUP-JOIN (`groupAcceptInvite` não aparece no código), o AC-T13-06 e a regra 1.4 nº 5.
 
 ---
 
