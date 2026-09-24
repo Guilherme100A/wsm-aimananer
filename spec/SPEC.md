@@ -553,6 +553,7 @@ interface WaTransport {
 **Origem:** pedido do humano em 2026-09-24. Chips pessoais, com histórico, conectam pelo IP normal da máquina, sem proxy.
 **Paths:** `apps/dashboard/**` (a API não muda: sessão sem proxy já conecta direto, como diz o AC-T17-03)
 **Depende de:** T21 aceito (mesmos arquivos do dashboard).
+**Substitui:** a expectativa de campos de proxy visíveis por padrão (AC-T18-02) e de "—" para sessão sem proxy (AC-T18-03). A Tester do T22 (Íris) atualiza os testes do T12, T18 e T21 nesses pontos: desmarca `new-direct-connection` antes de usar os campos de proxy e espera "Conexão direta" no lugar de "—". O Operário deixa os campos `new-proxy-*` no DOM (com `hidden`) quando a checkbox está marcada.
 **Critérios de aceitação**
 - **AC-T22-01** "+ Adicionar número" tem a checkbox **"Chip pessoal / conexão direta (sem proxy)"**, **marcada por padrão**.
   - Marcada: os campos de proxy ficam ocultos, e a sessão é criada **sem** `proxy` nem `proxyId`.
@@ -560,7 +561,7 @@ interface WaTransport {
   - A sessão é criada com o proxy inline, e o AC-T06-05 continua valendo: com proxy configurado, nunca conecta sem ele.
 - **AC-T22-03** A lista de sessões e o detalhe mostram **"Conexão direta"** quando `proxy` é null (no lugar de "—").
   - No detalhe, dá para adicionar um proxy depois (PATCH do T17), com o aviso de restart.
-- **AC-T22-04** Os `data-testid` do T18, T21 e T12 continuam; o novo (aditivo) é `new-direct-connection`. As suítes T12, T18, T21 e T17 seguem verdes, e o build passa.
+- **AC-T22-04** Os `data-testid` do T18, T21 e T12 continuam; o novo (aditivo) é `new-direct-connection`. Com os testes atualizados conforme o "Substitui", as suítes T12, T18, T21 e T17 seguem verdes, e o build passa.
 
 ---
 
