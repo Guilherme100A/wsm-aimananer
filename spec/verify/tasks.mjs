@@ -162,6 +162,20 @@ export const TASKS = [
     commands: ['pnpm -r typecheck', 'pnpm -r lint', 'pnpm -r test', 'pnpm -r build', 'docker compose config -q'],
     infra: 'full',
   },
+  {
+    id: 'T17', title: 'Login admin e proxy na sessão (API)', wave: 8, deps: ['T03', 'T05', 'T06'],
+    paths: ['apps/api/src/auth/**', 'apps/api/src/middleware/auth*', 'apps/api/src/routes/auth*', 'apps/api/src/routes/sessions*', 'apps/api/src/config.ts', 'packages/core/src/proxy/**', 'packages/core/src/session/**', '.env.example', 'docs/auth.md'],
+    requiredFiles: ['apps/api/src/routes/auth.ts'],
+    commands: [...std('core', 'api')],
+    infra: true,
+  },
+  {
+    id: 'T18', title: 'Dashboard: login admin e proxy no cadastro', wave: 8, deps: ['T17', 'T12'],
+    paths: ['apps/dashboard/**'],
+    requiredFiles: ['apps/dashboard/src/main.tsx'],
+    commands: [...std('dashboard'), 'pnpm --filter @wsm/dashboard build'],
+    infra: false,
+  },
 ]
 
 // Regras proibidas — aplicadas em TODO --role operario (SPEC 1.4).

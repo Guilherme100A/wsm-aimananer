@@ -187,6 +187,8 @@ Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … 
 | 6 | T15 | Observabilidade | T08, T10 |
 | 6 | T12 | Dashboard | T05, T06, T07, T08, T10, T11, T14 |
 | 7 | T16 | Integração E2E e Docker Compose completo | todas |
+| 8 | T17 | Login admin e proxy na sessão (API) | T03, T05, T06 |
+| 8 | T18 | Dashboard: login admin e proxy no cadastro | T17 (contrato), T12 |
 
 ---
 
@@ -437,6 +439,54 @@ interface WaTransport {
 - **AC-T16-03** Fluxo de risco: sessão conectada recebe 403 → `PAUSED` → webhook de alerta recebido → envio seguinte rejeitado com `SESSION_NOT_CONNECTED`.
 - **AC-T16-04** Fluxo de opt-out: contato envia "SAIR" → `opt_out=true` → envio seguinte rejeitado com `CONTACT_NOT_ALLOWED`.
 - **AC-T16-05** Restart do container `worker` → sessões reconectam e a fila retoma sem perder nem duplicar mensagens.
+
+
+---
+
+### T17 — Login de administrador e proxy dentro da sessão (API)
+**Origem:** pedido do humano em 2026-09-24, depois da entrega das 17 tarefas. O proxy passa a ser configurado junto com a sessão (sem cadastro separado), e o login do painel passa a ser por usuário e senha.
+**Paths:** `apps/api/src/auth/**`, `apps/api/src/middleware/auth*`, `apps/api/src/routes/auth*`, `apps/api/src/routes/sessions*`, `apps/api/src/config.ts` (aditivo), `packages/core/src/proxy/**` (aditivo), `packages/core/src/session/**` (aditivo), `.env.example` (aditivo), `docs/auth.md`
+**Critérios de aceitação**
+- **AC-T17-01** `POST /api/auth/login {username, password}` é público. As credenciais vêm de `ADMIN_USERNAME` e `ADMIN_PASSWORD`, com default `admin` / `nimda`.
+  - Credenciais certas → 200 `{ token, expiresAt, user: { username, role: 'admin' } }`.
+  - Credenciais erradas → 401 `UNAUTHORIZED`, com a mesma mensagem para usuário ou senha errados. A comparação é em tempo constante.
+  - 5 falhas em 15 min pelo mesmo IP → 429 `RATE_LIMIT`.
+  - O login é auditado, sem registrar a senha.
+  - Se `ADMIN_PASSWORD` não estiver definido, o boot loga um warn dizendo que está usando a senha padrão.
+- **AC-T17-02** O token de login é assinado (HMAC-SHA256 com `AUTH_SECRET`) e expira em `AUTH_SESSION_TTL_MS` (default 12 h).
+  - Sem `AUTH_SECRET`, gera um segredo aleatório por processo e loga um warn: os tokens deixam de valer após restart.
+  - `/api/*` aceita `Bearer <token de login>` **ou** `Bearer <API_TOKEN>`; o `API_TOKEN` continua valendo para integrações e para o AC-T03-02.
+  - Token expirado, adulterado ou revogado → 401.
+  - `GET /api/auth/me` devolve o usuário.
+  - `POST /api/auth/logout` revoga o token até a expiração dele.
+- **AC-T17-03** `POST /api/sessions` aceita o proxy inline: `proxy: { protocol: 'http'|'https'|'socks5', host, port, username?, password? }`.
+  - O proxy é criado (senha cifrada, T06) e vinculado à sessão **na mesma transação**.
+  - Proxy inválido → 400 `VALIDATION_ERROR`, e a sessão não é criada.
+  - `proxy` junto com `proxyId` → 400.
+  - Sem proxy, a sessão é criada sem proxy (como hoje).
+- **AC-T17-04** `PATCH /api/sessions/:id { name?, note?, proxy?: {…} | null }` edita a sessão. Trocar ou remover o proxy:
+  - marca `requires_restart` e gera auditoria, como no T06;
+  - apaga o proxy antigo que ficou sem uso;
+  - sessão inexistente → 404.
+- **AC-T17-05** `GET /api/sessions` e `GET /api/sessions/:id` trazem `proxy: { id, protocol, host, port, username, hasPassword } | null`. Nunca a senha, nem cifrada. As rotas `/api/proxies` continuam funcionando (compatibilidade), mas deixam de ser o caminho principal.
+- **AC-T17-06** Continua valendo: conexão só pelo proxy da sessão, sem fallback direto (T06). As suítes T03, T05, T06 e T16 continuam verdes.
+
+### T18 — Dashboard: login de administrador e proxy no cadastro da sessão
+**Paths:** `apps/dashboard/**`
+**Substitui:** o AC-T12-01 (login por API token) e a parte "Proxies" do AC-T12-06. O Tester do T18 atualiza `tests/acceptance/T12/**` nesses pontos.
+**Critérios de aceitação**
+- **AC-T18-01** Tela de login com **Usuário** e **Senha**, que chama `POST /api/auth/login`.
+  - O token fica em memória e em sessionStorage (`wsm.token`), nunca em localStorage.
+  - Erro de credencial aparece na tela.
+  - Sem token, ou com qualquer 401, volta ao login.
+  - "Sair" chama `/api/auth/logout`.
+- **AC-T18-02** "+ Adicionar número" com os campos: **Nome**, **Número**, **Proxy** (Protocolo, IP/Host, Porta, Usuário, Senha, todos opcionais em bloco) e **Observação**, mais os botões "Gerar QR Code" e "Gerar Pairing Code".
+  - A sessão é criada com o proxy inline (AC-T17-03).
+  - Proxy incompleto (host sem porta etc.) é validado no cliente.
+- **AC-T18-03** A página **Proxies** sai da navegação.
+  - O detalhe da sessão mostra o proxy (senha mascarada) e permite editar ou remover via `PATCH` (AC-T17-04), avisando que exige restart.
+  - A lista de sessões mostra o IP do proxy de cada número.
+- **AC-T18-04** `pnpm --filter @wsm/dashboard build` passa. O smoke Playwright passa: login admin/nimda → adicionar número com proxy → QR → conectado → detalhe mostra o proxy.
 
 ---
 

@@ -22,10 +22,13 @@
 | 6 | T15 | Observabilidade | ACCEPTED | Cinzel | Radar | 0 | 16 testes; /metrics Prometheus, healthchecks nos 5 serviços, logs JSON com session_id |
 | 6 | T12 | Dashboard | ACCEPTED | Malho | Lince | 0 | 23 testes (Playwright); commit junto com T09/T15 |
 | 7 | T16 | Integração E2E | ACCEPTED | Brasa | Prisma | 0 | 18 testes contra a stack Docker; subida ~13 s; restart sem perda/duplicata |
+| 8 | T17 | Login admin e proxy na sessão (API) | IN_PROGRESS | Malho | Lince | 0 | pedido do humano |
+| 8 | T18 | Dashboard: login admin e proxy no cadastro | IN_PROGRESS | Cinzel | Radar | 0 | pedido do humano; contrato = SPEC T17 |
 
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · T17/T18 · Pedido do humano: proxy configurado junto com a sessão (sem página Proxies separada) e login do painel por usuário/senha admin/nimda. Decisões do Orquestrador: credenciais via ADMIN_USERNAME/ADMIN_PASSWORD (default admin/nimda, warn se default), token de login assinado com expiração, API_TOKEN continua valendo para integrações, /api/proxies mantido por compatibilidade. · Humano/Orquestrador
 - 2026-09-24 · FINAL · 17/17 ACCEPTED. Regressão final (wave 7, serial): 33 de 34 verificações ok e 0 falhas; a última (T16 tester) foi interrompida pelo Claude Code por memória crítica do sistema, mas já tinha passado isolada (18/18). Política AC-T16-05: marca durável antes do envio; SIGKILL durante o envio → failed "delivery state unknown" (nunca reenvia). · Orquestrador
 - 2026-09-24 · infra · Causa raiz dos OOM: vitest abre 1 fork por núcleo (16). verify.mjs agora exporta VITEST_MAX_WORKERS=4 (sobrescrevível). A VM do Docker (vmmemWSL) chegou a 6 GB após builds do T16. · Orquestrador
 - 2026-09-24 · T13 · Lacuna fechada: inbound persistido em messages (direction=inbound, status delivered, transport_message_id; enum não alterado para não quebrar MESSAGE_TRANSITIONS do T08). Opt-out do T07 (createOptOutHandler) não estava ligado em lugar nenhum; agora é chamado no attachAi antes da IA. Migration aditiva 0002_suggestions. Boot (T16) chama attachAi e remove o wiring próprio de opt-out. · Orquestrador
