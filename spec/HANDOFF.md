@@ -31,7 +31,8 @@ Com vários agentes e suítes vitest em paralelo, a máquina ficou com cerca de 
 
 ## Passos de retomada (em ordem)
 1. Subir a infra: `node spec/verify/infra-local.mjs`, com Postgres e Redis nativos (veja `spec/INFRA.md`). Conferir com `pg_isready`.
-2. Radar: `verify T08 --role tester`. Depois o Orquestrador roda `verify T08 --role operario`, **nunca os dois ao mesmo tempo**.
+2. **Atenção:** a Radar viu uma falha rara em `pause.test.ts` (1 em 21 execuções): depois do `resume()`, uma mensagem ficou presa em `queued`. A suspeita é uma corrida entre o `pause()/hold` de defesa do `process()` e o `resume()` do attach (veja a nota da Radar abaixo). Peça ao Cinzel para revisar isso antes do verify.
+   Radar: `verify T08 --role tester`. Depois o Orquestrador roda `verify T08 --role operario`, **nunca os dois ao mesmo tempo**.
 3. Se passar: commitar o T08, rodar `node spec/verify/verify.mjs wave 4` para a regressão e marcar ACCEPTED no STATUS.
    Se falhar por produto: REJECT, ciclo 2, e devolver ao Cinzel.
 4. Despachar a onda 5 e a 6, que dependem do T08:
@@ -46,3 +47,14 @@ Com vários agentes e suítes vitest em paralelo, a máquina ficou com cerca de 
 - Os prompts de despacho seguem o modelo de `Txx-op.txt` / `Txx-te.txt`: raiz, infra, context7, Paths, "não toque em tests/acceptance", base pronta, contrato, verify e formato de relatório 2.3.
 
 <!-- Notas dos agentes (acrescentar abaixo, uma seção por agente) -->
+
+## Radar (Tester T08) — handoff 2026-09-24
+
+- Testes do T08 em tests/acceptance/T08/ (env.ts, shared.ts, concurrency, lifecycle, retry, cancel, pause, single-point). Cobrem AC-T08-01..06. Contrato combinado com o Cinzel no cabeçalho de shared.ts.
+- Ciclo 0: REJECT em AC-T08-05 (createWorker desfazia um pause() explícito). O Cinzel corrigiu no ciclo 1.
+- Ciclo 1: pause.test.ts rodou 21 vezes: 17 passaram, 3 falharam por ambiente e 1 falhou por asserção.
+  - Ambiente: memória virtual esgotada (~558MB livres, 53 processos node), com psql saindo em 0xC000012D, fork do Postgres falhando e crash do Postgres.
+  - Asserção: execução 2 do 2º lote, teste "pausar com fila em andamento". Depois do resume, uma mensagem ficou em queued por mais de 15s. Não reproduziu nas 10 execuções seguintes (10/10 ok). A causa não foi confirmada.
+  - Suspeita (não confirmada): process() lê status PAUSED do banco e chama pause()/hold() (queue.ts, defesa), e isso pode reordenar com o resume() do attach (disparado com `void`). Outra possibilidade é o job em hold via RateLimitError com a fila pausada.
+- Adicionei o diagnóstico queueDiagnostics em shared.ts: se waitMsgStatus estourar o prazo, a mensagem de erro mostra isPaused e as listas/zsets do BullMQ da sessão.
+- PENDENTE: rodar `node spec/verify/verify.mjs T08 --role tester` no ciclo 1 (não foi rodado) e reportar ao Orquestrador no formato 2.3. Se a falha em queued voltar, reportar REJECT AC-T08-05 com o diagnóstico.
