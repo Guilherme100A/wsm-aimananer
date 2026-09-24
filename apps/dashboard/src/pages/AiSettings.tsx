@@ -1,7 +1,7 @@
 // IA / Modelo LLM (T19): chave de API (só o estado: configurada ou não), modelos, limiar, tokens, timeout,
 // ativar/desativar e teste de conexão. A IA só sugere respostas para mensagens recebidas; nada é enviado sem aprovação.
 import { useEffect, useState, type FormEvent } from 'react'
-import { ErrorText } from '../components/ui'
+import { ErrorText, PageHeader } from '../components/ui'
 import {
   aiApi,
   AI_LIMITS,
@@ -99,10 +99,10 @@ export function AiSettingsPage() {
 
   return (
     <div data-testid="page-ai">
-      <h1>IA / Modelo LLM</h1>
-      <p className="hint">
-        A IA assistiva só sugere respostas para mensagens recebidas; toda sugestão passa por aprovação humana antes do envio.
-      </p>
+      <PageHeader
+        title="IA / Modelo LLM"
+        subtitle="A IA assistiva só sugere respostas para mensagens recebidas; toda sugestão passa por aprovação humana antes do envio."
+      />
       <ErrorText error={error} testId="ai-error" />
       {status ? (
         <p className="status" data-testid="ai-status">
@@ -134,6 +134,7 @@ export function AiSettingsPage() {
                 </button>
                 <button
                   type="button"
+                  className="secondary"
                   onClick={() => {
                     setReplacing(false)
                     setNewKey('')
@@ -144,10 +145,10 @@ export function AiSettingsPage() {
               </div>
             ) : (
               <div className="row">
-                <button type="button" data-testid="ai-key-replace" onClick={() => setReplacing(true)}>
+                <button type="button" className="secondary" data-testid="ai-key-replace" onClick={() => setReplacing(true)}>
                   Substituir
                 </button>
-                <button type="button" data-testid="ai-key-remove" disabled={busy || settings.sources.apiKey !== 'db'} onClick={() => void removeKey()}>
+                <button type="button" className="danger" data-testid="ai-key-remove" disabled={busy || settings.sources.apiKey !== 'db'} onClick={() => void removeKey()}>
                   Remover
                 </button>
               </div>
@@ -218,7 +219,7 @@ export function AiSettingsPage() {
               <button type="submit" data-testid="ai-save" disabled={busy}>
                 Salvar
               </button>
-              <button type="button" data-testid="ai-test" disabled={busy} onClick={() => void test()}>
+              <button type="button" className="secondary" data-testid="ai-test" disabled={busy} onClick={() => void test()}>
                 Testar conexão
               </button>
             </div>

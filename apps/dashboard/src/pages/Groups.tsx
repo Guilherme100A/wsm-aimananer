@@ -2,7 +2,7 @@
 // T20: em grupos em que a sessão é admin, "Adicionar número" adiciona UMA sessão do sistema, com confirmação.
 import { useState } from 'react'
 import { GroupAddDialog } from '../components/GroupAddDialog'
-import { ErrorText } from '../components/ui'
+import { ErrorText, PageHeader } from '../components/ui'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
 import { indicatorText } from '../lib/states'
@@ -34,8 +34,8 @@ export function Groups() {
 
   return (
     <div data-testid="page-groups">
-      <h1>Grupos</h1>
-      <div className="panel inline-form">
+      <PageHeader title="Grupos" subtitle="Grupos de cada sessão. Adicionar um número é uma ação manual, uma por vez e com confirmação." />
+      <div className="panel inline-form toolbar">
         <label htmlFor="groups-session">Sessão</label>
         <select id="groups-session" data-testid="groups-session" value={sessionId} onChange={(e) => load(e.target.value)}>
           <option value="">Selecione…</option>
@@ -45,12 +45,13 @@ export function Groups() {
             </option>
           ))}
         </select>
-        <button type="button" data-testid="groups-refresh" disabled={!sessionId || busy} onClick={() => load(sessionId, true)}>
+        <button type="button" className="secondary" data-testid="groups-refresh" disabled={!sessionId || busy} onClick={() => load(sessionId, true)}>
           Atualizar
         </button>
       </div>
       <ErrorText error={error} testId="groups-error" />
       {groups ? (
+        <div className="table-wrap">
         <table>
           <thead>
             <tr>
@@ -64,13 +65,16 @@ export function Groups() {
           <tbody>
             {groups.map((g) => (
               <tr key={g.id} data-testid="group-row" data-group-id={g.id}>
-                <td>{g.name}</td>
+                <td className="cell-strong">{g.name}</td>
                 <td>{g.participants}</td>
-                <td>{g.announce ? 'Somente admins' : 'Aberto'}</td>
-                <td>{g.communityId ?? '—'}</td>
                 <td>
+                  <span className="tag">{g.announce ? 'Somente admins' : 'Aberto'}</span>
+                </td>
+                <td className="mono muted">{g.communityId ?? '—'}</td>
+                <td className="cell-actions">
                   <button
                     type="button"
+                    className="secondary btn-sm"
                     data-testid="group-add-number"
                     disabled={!g.isAdmin}
                     title={g.isAdmin ? 'Adicionar uma sessão do sistema a este grupo' : NOT_ADMIN_HINT}
@@ -95,6 +99,7 @@ export function Groups() {
             ) : null}
           </tbody>
         </table>
+        </div>
       ) : null}
       {adding && sessionId ? (
         <GroupAddDialog

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ErrorText } from '../components/ui'
+import { ErrorText, PageHeader } from '../components/ui'
 import { formatDateTime } from '../lib/aggregate'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
@@ -29,10 +29,10 @@ export function Contacts() {
 
   return (
     <div data-testid="page-contacts">
-      <h1>Contatos</h1>
-      <section className="panel">
-        <h3>Importar CSV</h3>
-        <p className="muted">Colunas: phone (obrigatória), name, consent, consent_at, consent_source, last_contact_at. Cada linha precisa de consent=true, consent_at e consent_source.</p>
+      <PageHeader title="Contatos" subtitle="Só recebem mensagens os contatos com consentimento registrado e sem opt-out." />
+      <section className="panel stack">
+        <h2>Importar CSV</h2>
+        <p className="muted" style={{ margin: 0 }}>Colunas: phone (obrigatória), name, consent, consent_at, consent_source, last_contact_at. Cada linha precisa de consent=true, consent_at e consent_source.</p>
         <input
           type="file"
           accept=".csv,text/csv"
@@ -44,12 +44,12 @@ export function Contacts() {
           }}
         />
         <textarea data-testid="csv-text" rows={4} placeholder="phone,name,consent,consent_at,consent_source" value={csv} onChange={(e) => setCsv(e.target.value)} />
-        <button type="button" data-testid="csv-import" disabled={busy} onClick={() => importCsv(csv)}>
+        <button type="button" className="secondary" data-testid="csv-import" disabled={busy} onClick={() => importCsv(csv)}>
           Importar
         </button>
         <ErrorText error={importError} testId="csv-error" />
         {result ? (
-          <div data-testid="csv-result">
+          <div className="status" data-testid="csv-result">
             <p>
               imported {result.imported} · rejeitados {result.rejected.length}
             </p>
@@ -66,6 +66,7 @@ export function Contacts() {
         ) : null}
       </section>
       <ErrorText error={error} />
+      <div className="table-wrap">
       <table>
         <thead>
           <tr>
@@ -79,11 +80,11 @@ export function Contacts() {
         <tbody>
           {(data ?? []).map((c) => (
             <tr key={c.id} data-testid="contact-row" data-contact-id={c.id}>
-              <td>{c.name ?? '—'}</td>
-              <td>{c.phone}</td>
+              <td className="cell-strong">{c.name ?? '—'}</td>
+              <td className="mono">{c.phone}</td>
               <td>{c.consent ? `Sim${c.consent_source ? ` (${c.consent_source})` : ''}` : 'Não'}</td>
               <td>{c.opt_out ? 'Sim' : 'Não'}</td>
-              <td>{formatDateTime(c.last_contact_at)}</td>
+              <td className="muted">{formatDateTime(c.last_contact_at)}</td>
             </tr>
           ))}
           {data && data.length === 0 ? (
@@ -95,6 +96,7 @@ export function Contacts() {
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

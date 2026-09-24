@@ -1,4 +1,4 @@
-import { Card, ErrorText } from '../components/ui'
+import { Card, ErrorText, PageHeader } from '../components/ui'
 import { formatDateTime, summarizeHome } from '../lib/aggregate'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
@@ -18,7 +18,7 @@ export function Home() {
   const v = (n: number | undefined) => (n === undefined ? '…' : n)
   return (
     <div data-testid="page-home">
-      <h1>Visão geral</h1>
+      <PageHeader title="Visão geral" subtitle="Estado das sessões e volume de mensagens nas últimas 24 horas." />
       <ErrorText error={error} />
       <div className="cards">
         <Card testId="card-connected" title="Conectadas" value={v(data?.connected)} />

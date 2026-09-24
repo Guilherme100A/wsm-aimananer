@@ -1,11 +1,25 @@
 import type { ReactNode } from 'react'
-import { indicatorText } from '../lib/states'
+import { STATE_INDICATORS } from '../lib/states'
 import type { SessionState } from '../lib/types'
 
+/**
+ * Pílula de estado. O textContent continua "<ícone> <rótulo>" (SPEC 3.2); o emoji fica num span
+ * aria-hidden que o CSS desenha como um ponto na cor do estado.
+ */
 export function StateIndicator({ state, testId = 'session-state' }: { state: SessionState; testId?: string }) {
+  const i = STATE_INDICATORS[state]
   return (
     <span className={`state state-${state.toLowerCase()}`} data-testid={testId} data-state={state}>
-      {indicatorText(state)}
+      {i ? (
+        <>
+          <span className="state-dot" aria-hidden="true">
+            {i.icon}
+          </span>{' '}
+          {i.label}
+        </>
+      ) : (
+        state
+      )}
     </span>
   )
 }
@@ -19,6 +33,19 @@ export function Card({ testId, title, value, hint }: { testId: string; title: st
       </div>
       {hint ? <div className="card-hint">{hint}</div> : null}
     </div>
+  )
+}
+
+/** Cabeçalho de página: título (h1), subtítulo opcional e ações à direita. */
+export function PageHeader({ title, subtitle, children }: { title: ReactNode; subtitle?: ReactNode; children?: ReactNode }) {
+  return (
+    <header className="page-head">
+      <div>
+        <h1>{title}</h1>
+        {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
+      </div>
+      {children ? <div className="page-actions">{children}</div> : null}
+    </header>
   )
 }
 

@@ -1,4 +1,4 @@
-import { ErrorText, StateIndicator } from '../components/ui'
+import { ErrorText, PageHeader, StateIndicator } from '../components/ui'
 import { formatDateTime } from '../lib/aggregate'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
@@ -9,13 +9,13 @@ export function Sessions() {
   const { data, error } = usePoll(() => api.sessions(), POLL.list)
   return (
     <div data-testid="page-sessions">
-      <div className="page-head">
-        <h1>Sessões</h1>
+      <PageHeader title="Sessões" subtitle="Números conectados, estado e proxy de cada sessão.">
         <a className="button" href={routeHref({ name: 'new-session' })} data-testid="add-session">
           + Adicionar número
         </a>
-      </div>
+      </PageHeader>
       <ErrorText error={error} />
+      <div className="table-wrap">
       <table>
         <thead>
           <tr>
@@ -33,15 +33,15 @@ export function Sessions() {
               <td>
                 <StateIndicator state={s.status} />
               </td>
-              <td>
+              <td className="cell-strong">
                 <a href={routeHref({ name: 'session', id: s.id })} data-testid="session-link">
                   {s.name}
                 </a>
               </td>
-              <td>{s.phone}</td>
-              <td data-testid="session-proxy">{proxyAddress(s.proxy)}</td>
-              <td>{formatDateTime(s.lastConnectedAt)}</td>
-              <td>{s.note ?? ''}</td>
+              <td className="mono">{s.phone}</td>
+              <td className="mono" data-testid="session-proxy">{proxyAddress(s.proxy)}</td>
+              <td className="muted">{formatDateTime(s.lastConnectedAt)}</td>
+              <td className="muted">{s.note ?? ''}</td>
             </tr>
           ))}
           {data && data.length === 0 ? (
@@ -53,6 +53,7 @@ export function Sessions() {
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

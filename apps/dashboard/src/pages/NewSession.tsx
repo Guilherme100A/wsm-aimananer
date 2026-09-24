@@ -1,7 +1,7 @@
 // "+ Adicionar número" (AC-T12-04, AC-T18-02): cria a sessão com o proxy inline e autentica por QR ou pairing code.
 import { useEffect, useState, type FormEvent } from 'react'
 import { ProxyFields } from '../components/ProxyFields'
-import { ErrorText, StateIndicator } from '../components/ui'
+import { ErrorText, PageHeader, StateIndicator } from '../components/ui'
 import { api } from '../lib/api'
 import { POLL } from '../lib/hooks'
 import { emptyProxyForm, parseProxyForm, type ProxyInput } from '../lib/proxy-form'
@@ -93,7 +93,11 @@ export function NewSession() {
 
   return (
     <div data-testid="page-new-session">
-      <h1>Adicionar número</h1>
+      <PageHeader title="Adicionar número" subtitle="Cadastre o número e o proxy e autentique por QR Code ou pairing code.">
+        <a className="button secondary-link" href={routeHref({ name: 'sessions' })}>
+          Voltar
+        </a>
+      </PageHeader>
       <form className="panel form" onSubmit={(e) => start(e, 'qr')}>
         <label htmlFor="new-name">Nome</label>
         <input id="new-name" data-testid="new-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!!session} required />
@@ -119,7 +123,7 @@ export function NewSession() {
           <button type="submit" data-testid="gen-qr" disabled={busy || connected}>
             Gerar QR Code
           </button>
-          <button type="button" data-testid="gen-pairing" disabled={busy || connected} onClick={() => start(undefined, 'pairing')}>
+          <button type="button" className="secondary" data-testid="gen-pairing" disabled={busy || connected} onClick={() => start(undefined, 'pairing')}>
             Gerar Pairing Code
           </button>
         </div>
@@ -150,7 +154,7 @@ export function NewSession() {
           <p>
             Conectado: <StateIndicator state={state} testId="connect-state" />
           </p>
-          <a href={routeHref({ name: 'session', id: session.id })} data-testid="session-open">
+          <a className="button" href={routeHref({ name: 'session', id: session.id })} data-testid="session-open">
             Abrir sessão
           </a>
         </div>

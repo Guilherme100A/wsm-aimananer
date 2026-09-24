@@ -59,12 +59,12 @@ export function SessionProxyPanel({ session: polled, onChanged }: { session: Ses
       <div className="page-head">
         <h2>Proxy</h2>
         {!editing ? (
-          <button type="button" data-testid="proxy-edit" onClick={open}>
+          <button type="button" className="secondary" data-testid="proxy-edit" onClick={open}>
             Editar proxy
           </button>
         ) : null}
       </div>
-      <p data-testid="detail-proxy">
+      <p className="proxy-value" data-testid="detail-proxy">
         <span data-testid="session-proxy">{proxyLabel(proxy)}</span>
       </p>
       {editing || session.requiresRestart ? (
@@ -90,7 +90,7 @@ export function SessionProxyPanel({ session: polled, onChanged }: { session: Ses
             <button type="submit" data-testid="proxy-save" disabled={busy}>
               Salvar proxy
             </button>
-            <button type="button" data-testid="proxy-cancel" disabled={busy} onClick={() => setEditing(false)}>
+            <button type="button" className="secondary" data-testid="proxy-cancel" disabled={busy} onClick={() => setEditing(false)}>
               Cancelar
             </button>
             {proxy ? (

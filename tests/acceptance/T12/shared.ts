@@ -9,10 +9,10 @@
 //   page-*, csv-*, groups-session/group-row, webhook-*; estado vazio = 'Sem dados'.
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from './env'
 import { randomBytes } from 'node:crypto'
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs'
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { homedir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { extname, join, normalize } from 'node:path'
 import { afterAll, beforeAll, expect } from 'vitest'
 import { createApp } from '@wsm/api'
@@ -29,7 +29,63 @@ const SRC = rootPath('apps/dashboard/src')
 
 // ---- build -------------------------------------------------------------------------
 
-export const buildDashboard = () => exec('pnpm --filter @wsm/dashboard build', { timeoutMs: 600_000 })
+// O `vite build` esvazia apps/dashboard/dist. Para que um build (de outro arquivo, suíte ou agente) nunca quebre um
+// servidor no meio de uma resposta: (1) todo build e toda cópia do dist rodam sob um lock de arquivo (mkdir atômico);
+// (2) cada servidor serve uma CÓPIA PRIVADA do dist, tirada sob o lock (ver serve()).
+const LOCK = join(tmpdir(), 'wsm-dashboard-dist.lock') // fora de apps/** (os testes não escrevem no produto)
+const LOCK_STALE_MS = 15 * 60_000
+
+const sleepSync = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+
+function withDistLock<T>(fn: () => T): T {
+  const deadline = Date.now() + LOCK_STALE_MS
+  for (;;) {
+    try {
+      mkdirSync(LOCK)
+      break
+    } catch (e: any) {
+      if (e?.code !== 'EEXIST') throw e
+      // lock abandonado (processo morto no meio do build) → assume
+      try {
+        if (Date.now() - statSync(LOCK).mtimeMs > LOCK_STALE_MS) rmSync(LOCK, { recursive: true, force: true })
+      } catch {
+        /* sumiu entre o mkdir e o stat */
+      }
+      if (Date.now() > deadline) throw new Error(`lock do dist preso: ${LOCK}`)
+      sleepSync(250)
+    }
+  }
+  try {
+    return fn()
+  } finally {
+    rmSync(LOCK, { recursive: true, force: true })
+  }
+}
+
+export const buildDashboard = () => withDistLock(() => exec('pnpm --filter @wsm/dashboard build', { timeoutMs: 600_000 }))
+
+/** Os assets referenciados pelo index.html existem no diretório (dist completo, não um build pela metade). */
+function distComplete(dir: string): boolean {
+  const index = join(dir, 'index.html')
+  if (!existsSync(index)) return false
+  const refs = [...readFileSync(index, 'utf8').matchAll(/(?:src|href)="\/?(assets\/[^"]+)"/g)].map((m) => m[1]!)
+  return refs.every((r) => existsSync(join(dir, r)))
+}
+
+/** Copia o dist para um diretório temporário próprio do servidor (sob o lock; repete se pegar um dist incompleto). */
+function snapshotDist(): string {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const dir = withDistLock(() => {
+      const d = mkdtempSync(join(tmpdir(), 'wsm-dist-'))
+      cpSync(DIST, d, { recursive: true })
+      return d
+    })
+    if (distComplete(dir)) return dir
+    rmSync(dir, { recursive: true, force: true })
+    sleepSync(1_000) // alguém buildando fora do lock (ex.: pnpm build manual): espera e tenta de novo
+  }
+  throw new Error(`apps/dashboard/dist incompleto (index.html referencia assets ausentes)`)
+}
 
 function newestMtime(dir: string): number {
   let max = 0
@@ -43,11 +99,15 @@ function newestMtime(dir: string): number {
 
 /** Builda o dashboard se o dist/ não existir ou estiver mais velho que src/ ou index.html. */
 export function ensureBuild() {
-  const index = join(DIST, 'index.html')
-  const srcTime = Math.max(newestMtime(SRC), statSync(rootPath('apps/dashboard/index.html')).mtimeMs)
-  if (existsSync(index) && statSync(index).mtimeMs >= srcTime) return
-  const r = buildDashboard()
-  if (r.code !== 0) throw new Error(`build do dashboard falhou\n${tail(r, 60)}`)
+  const fresh = () => {
+    const index = join(DIST, 'index.html')
+    const srcTime = Math.max(newestMtime(SRC), statSync(rootPath('apps/dashboard/index.html')).mtimeMs)
+    return existsSync(index) && statSync(index).mtimeMs >= srcTime && distComplete(DIST)
+  }
+  if (fresh()) return
+  // checa de novo dentro do lock: outro arquivo pode ter acabado de buildar
+  const r = withDistLock(() => (fresh() ? null : exec('pnpm --filter @wsm/dashboard build', { timeoutMs: 600_000 })))
+  if (r && r.code !== 0) throw new Error(`build do dashboard falhou\n${tail(r, 60)}`)
 }
 
 // ---- servidor na mesma origem ---------------------------------------------------------
@@ -66,6 +126,7 @@ const TYPES: Record<string, string> = {
 }
 
 export async function serve(app: any) {
+  const root = snapshotDist()
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? '/', 'http://127.0.0.1')
@@ -84,13 +145,17 @@ export async function serve(app: any) {
         res.end(out)
         return
       }
-      let file = normalize(join(DIST, decodeURIComponent(url.pathname)))
-      if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html')
+      let file = normalize(join(root, decodeURIComponent(url.pathname)))
+      if (!file.startsWith(root) || !existsSync(file) || statSync(file).isDirectory()) file = join(root, 'index.html')
+      const content = readFileSync(file) // lê antes de escrever o cabeçalho: falha de leitura vira um 500 único
       res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' })
-      res.end(readFileSync(file))
+      res.end(content)
     } catch (e) {
-      res.writeHead(500)
-      res.end(String(e))
+      // nunca escreve a resposta duas vezes (ERR_HTTP_HEADERS_SENT deixava a requisição pendurada)
+      if (!res.headersSent) {
+        res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' })
+        res.end(String(e))
+      } else res.destroy(e as Error)
     }
   })
   await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
@@ -100,7 +165,10 @@ export async function serve(app: any) {
     close: () =>
       new Promise<void>((r) => {
         server.closeAllConnections?.()
-        server.close(() => r())
+        server.close(() => {
+          rmSync(root, { recursive: true, force: true })
+          r()
+        })
       }),
   }
 }
@@ -213,9 +281,23 @@ export const hashOf = (page: any) => page.evaluate(() => location.hash)
 
 export { ADMIN_PASSWORD, ADMIN_USERNAME }
 
+// Navegação tolerante à carga da máquina: espera o DOM (não o evento 'load') com prazo de 45 s e tenta de novo uma vez
+// se der timeout. Quem chama espera o elemento-alvo da tela em seguida.
+const NAV_TIMEOUT = 45_000
+
+async function gotoHash(page: any, url: string) {
+  try {
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT })
+  } catch (e) {
+    if (!/Timeout/i.test(String((e as Error)?.message ?? e))) throw e
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT })
+  }
+}
+
 /** Login do painel com usuário/senha (T18 substitui o login por token do AC-T12-01). */
 export async function doLogin(ctx: DCtx, page: any, username = ADMIN_USERNAME, password = ADMIN_PASSWORD) {
-  await page.goto(`${ctx.base}/#/login`)
+  await gotoHash(page, `${ctx.base}/#/login`)
+  await page.locator(tid('login-username')).waitFor({ state: 'visible', timeout: NAV_TIMEOUT })
   await page.locator(tid('login-username')).fill(username)
   await page.locator(tid('login-password')).fill(password)
   await page.locator(tid('login-submit')).click()
@@ -223,7 +305,7 @@ export async function doLogin(ctx: DCtx, page: any, username = ADMIN_USERNAME, p
 }
 
 export async function go(ctx: DCtx, page: any, hashPath: string) {
-  await page.goto(`${ctx.base}/#${hashPath}`)
+  await gotoHash(page, `${ctx.base}/#${hashPath}`)
 }
 
 export const textOf = async (page: any, testId: string) => ((await page.locator(tid(testId)).first().textContent()) ?? '').trim()

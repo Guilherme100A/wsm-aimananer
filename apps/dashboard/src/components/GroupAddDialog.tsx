@@ -45,9 +45,10 @@ export function GroupAddDialog({ adminSessionId, group, sessions, onClose, onAdd
   }
 
   return (
-    <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="group-add-title" data-testid="group-add-dialog">
+    <div className="panel dialog" role="dialog" aria-modal="true" aria-labelledby="group-add-title" data-testid="group-add-dialog">
       <h2 id="group-add-title">Adicionar número ao grupo {group.name || group.id}</h2>
       <p className="hint">Adiciona uma sessão do sistema a este grupo. Uma por vez, com confirmação.</p>
+      <div className="dialog-field">
       <label htmlFor="group-add-target">Sessão</label>
       <select
         id="group-add-target"
@@ -67,13 +68,14 @@ export function GroupAddDialog({ adminSessionId, group, sessions, onClose, onAdd
           </option>
         ))}
       </select>
+      </div>
 
       {!confirming ? (
         <div className="row">
           <button type="button" data-testid="group-add-confirm-step" disabled={!target || busy} onClick={() => setConfirming(true)}>
             Continuar
           </button>
-          <button type="button" data-testid="group-add-cancel" onClick={onClose}>
+          <button type="button" className="secondary" data-testid="group-add-cancel" onClick={onClose}>
             {result ? 'Fechar' : 'Cancelar'}
           </button>
         </div>
@@ -84,7 +86,7 @@ export function GroupAddDialog({ adminSessionId, group, sessions, onClose, onAdd
             <button type="button" data-testid="group-add-confirm" disabled={busy} onClick={() => void confirm()}>
               Adicionar
             </button>
-            <button type="button" data-testid="group-add-cancel" disabled={busy} onClick={() => setConfirming(false)}>
+            <button type="button" className="secondary" data-testid="group-add-cancel" disabled={busy} onClick={() => setConfirming(false)}>
               Cancelar
             </button>
           </div>

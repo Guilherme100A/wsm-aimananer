@@ -4,6 +4,8 @@ import { api } from '../lib/api'
 import { setToken } from '../lib/auth'
 import { loginErrorMessage } from '../lib/login'
 import { navigate } from '../lib/router'
+import { Logo } from '../components/icons'
+import { ThemeToggle } from '../components/Layout'
 
 export function Login() {
   const [username, setUsername] = useState('')
@@ -30,8 +32,13 @@ export function Login() {
 
   return (
     <div className="login">
-      <form onSubmit={submit} className="panel">
+      <div className="login-top">
+        <ThemeToggle />
+      </div>
+      <form onSubmit={submit} className="panel login-card">
+        <Logo />
         <h1>WA Session Manager</h1>
+        <p className="page-subtitle">Entre com sua conta de administrador.</p>
         <label htmlFor="login-username">Usuário</label>
         <input
           id="login-username"

@@ -2,9 +2,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { SessionProxyPanel } from '../components/SessionProxyPanel'
-import { ChartBox, ErrorText, StateIndicator } from '../components/ui'
+import { ChartBox, ErrorText, PageHeader, StateIndicator } from '../components/ui'
 import { appendSample, bucketMessages, formatDateTime, latencySeries, parsePrometheusLatency, timeLabel } from '../lib/aggregate'
 import { api } from '../lib/api'
+import { useChartColors, useReducedMotion, type ChartColors } from '../lib/chart-theme'
 import { POLL, usePoll } from '../lib/hooks'
 import { navigate } from '../lib/router'
 import { CONNECTED_STATES, indicatorText, STATE_INDICATORS, STATE_LEVEL } from '../lib/states'
@@ -34,6 +35,9 @@ export function SessionDetail({ id }: { id: string }) {
   const [showLogs, setShowLogs] = useState(false)
   const [actionError, setActionError] = useState<unknown>()
   const [busy, setBusy] = useState(false)
+  const c = useChartColors()
+  const animate = !useReducedMotion()
+  const ax = axisProps(c)
 
   const state = session.data?.status ?? health.data?.state
 
@@ -75,9 +79,14 @@ export function SessionDetail({ id }: { id: string }) {
 
   return (
     <div data-testid="page-session">
-      <h1>
-        {s?.name ?? 'Sessão'} <small className="muted">{s?.phone}</small>
-      </h1>
+      <PageHeader
+        title={
+          <>
+            {s?.name ?? 'Sessão'} <small className="muted mono">{s?.phone}</small>
+          </>
+        }
+        {...(s?.note ? { subtitle: s.note } : {})}
+      />
 
       <section className="panel session-card" data-testid="session-card">
         <dl>
@@ -126,14 +135,14 @@ export function SessionDetail({ id }: { id: string }) {
               Resume
             </button>
           ) : (
-            <button type="button" data-testid="btn-pause" disabled={busy || !state || !['WARMING', 'STABLE', 'DEGRADED'].includes(state)} onClick={() => act('pause')}>
+            <button type="button" className="secondary" data-testid="btn-pause" disabled={busy || !state || !['WARMING', 'STABLE', 'DEGRADED'].includes(state)} onClick={() => act('pause')}>
               Pause
             </button>
           )}
-          <button type="button" data-testid="btn-restart" disabled={busy || !state || state === 'DISCONNECTED'} onClick={() => act('restart')}>
+          <button type="button" className="secondary" data-testid="btn-restart" disabled={busy || !state || state === 'DISCONNECTED'} onClick={() => act('restart')}>
             Restart
           </button>
-          <button type="button" data-testid="btn-logs" onClick={() => setShowLogs((v) => !v)}>
+          <button type="button" className="secondary" data-testid="btn-logs" aria-expanded={showLogs} onClick={() => setShowLogs((v) => !v)}>
             Logs
           </button>
           <button type="button" className="danger" data-testid="btn-logout" disabled={busy || !state || state === 'DISCONNECTED'} onClick={() => act('logout')}>
@@ -154,13 +163,13 @@ export function SessionDetail({ id }: { id: string }) {
         <ChartBox testId="chart-messages-hour" title="Mensagens por hora (24h)" empty={hourly.every((b) => b.total === 0 && b.sent === 0)}>
           <ResponsiveContainer width="100%" height={H}>
             <BarChart data={hourly}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="sent" name="Enviadas" fill="#2e7d32" />
-              <Bar dataKey="failed" name="Falhas" fill="#c62828" />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis allowDecimals={false} {...ax} width={32} />
+              <Tooltip {...tooltipProps(c)} />
+              <Legend iconType="circle" iconSize={8} />
+              <Bar dataKey="sent" name="Enviadas" fill={c.sent} radius={[4, 4, 0, 0]} isAnimationActive={animate} />
+              <Bar dataKey="failed" name="Falhas" fill={c.failed} radius={[4, 4, 0, 0]} isAnimationActive={animate} />
             </BarChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -168,13 +177,13 @@ export function SessionDetail({ id }: { id: string }) {
         <ChartBox testId="chart-messages-day" title="Mensagens por dia (7 dias)" empty={daily.every((b) => b.total === 0 && b.sent === 0)}>
           <ResponsiveContainer width="100%" height={H}>
             <BarChart data={daily}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="sent" name="Enviadas" fill="#2e7d32" />
-              <Bar dataKey="failed" name="Falhas" fill="#c62828" />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis allowDecimals={false} {...ax} width={32} />
+              <Tooltip {...tooltipProps(c)} />
+              <Legend iconType="circle" iconSize={8} />
+              <Bar dataKey="sent" name="Enviadas" fill={c.sent} radius={[4, 4, 0, 0]} isAnimationActive={animate} />
+              <Bar dataKey="failed" name="Falhas" fill={c.failed} radius={[4, 4, 0, 0]} isAnimationActive={animate} />
             </BarChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -187,11 +196,11 @@ export function SessionDetail({ id }: { id: string }) {
         >
           <ResponsiveContainer width="100%" height={H}>
             <BarChart data={h ? [{ name: 'Enviadas', value: h.sent }, { name: 'Recebidas', value: h.received }] : []}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="value" name="Mensagens" fill="#1565c0" />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="name" {...ax} />
+              <YAxis allowDecimals={false} {...ax} width={32} />
+              <Tooltip {...tooltipProps(c)} />
+              <Bar dataKey="value" name="Mensagens" fill={c.received} radius={[4, 4, 0, 0]} isAnimationActive={animate} />
             </BarChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -199,11 +208,11 @@ export function SessionDetail({ id }: { id: string }) {
         <ChartBox testId="chart-failures" title="Falhas por hora (24h)" empty={hourly.every((b) => b.failed === 0)}>
           <ResponsiveContainer width="100%" height={H}>
             <LineChart data={hourly}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line type="linear" dataKey="failed" name="Falhas" stroke="#c62828" />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis allowDecimals={false} {...ax} width={32} />
+              <Tooltip {...tooltipProps(c)} />
+              <Line type="linear" dataKey="failed" name="Falhas" stroke={c.failed} strokeWidth={2} dot={false} isAnimationActive={animate} />
             </LineChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -211,11 +220,11 @@ export function SessionDetail({ id }: { id: string }) {
         <ChartBox testId="chart-disconnects" title="Desconexões (24h, amostrado)" empty={samples.length === 0} note="Amostrado enquanto a página está aberta.">
           <ResponsiveContainer width="100%" height={H}>
             <LineChart data={samples}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line type="stepAfter" dataKey="disconnects" name="Desconexões" stroke="#ef6c00" isAnimationActive={false} />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis allowDecimals={false} {...ax} width={32} />
+              <Tooltip {...tooltipProps(c)} />
+              <Line type="stepAfter" dataKey="disconnects" name="Desconexões" stroke={c.warning} strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -228,11 +237,11 @@ export function SessionDetail({ id }: { id: string }) {
         >
           <ResponsiveContainer width="100%" height={H}>
             <LineChart data={latencyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="ms" name="Latência (ms)" stroke="#6a1b9a" isAnimationActive={false} />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis {...ax} width={40} />
+              <Tooltip {...tooltipProps(c)} />
+              <Line type="monotone" dataKey="ms" name="Latência (ms)" stroke={c.accent} strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -240,11 +249,11 @@ export function SessionDetail({ id }: { id: string }) {
         <ChartBox testId="chart-state" title="Estado (amostrado)" empty={samples.length === 0} note={state ? `Atual: ${indicatorText(state)}` : undefined}>
           <ResponsiveContainer width="100%" height={H}>
             <LineChart data={samples}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis domain={[0, 5]} ticks={LEVEL_TICKS.map((t) => t.level)} tickFormatter={levelName} width={100} />
-              <Tooltip formatter={(v) => levelName(Number(v))} />
-              <Line type="stepAfter" dataKey="level" name="Estado" stroke="#37474f" isAnimationActive={false} />
+              <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" {...ax} />
+              <YAxis {...ax} domain={[0, 5]} ticks={LEVEL_TICKS.map((t) => t.level)} tickFormatter={levelName} width={100} />
+              <Tooltip {...tooltipProps(c)} formatter={(v) => levelName(Number(v))} />
+              <Line type="stepAfter" dataKey="level" name="Estado" stroke={c.neutral} strokeWidth={2} dot={false} isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </ChartBox>
@@ -260,12 +269,13 @@ function Logs({ messages }: { messages: Message[] }) {
     <section className="panel" data-testid="logs-panel">
       <h3>Logs de mensagens</h3>
       {messages.length === 0 ? <p className="empty">Sem mensagens</p> : null}
+      <div className="table-wrap">
       <table>
         <tbody>
           {messages.slice(0, 100).map((m) => (
             <tr key={m.id} data-testid="log-row">
-              <td>{formatDateTime(m.createdAt)}</td>
-              <td>{m.phone}</td>
+              <td className="muted">{formatDateTime(m.createdAt)}</td>
+              <td className="mono">{m.phone}</td>
               <td>{m.status}</td>
               <td>{m.lastError ?? ''}</td>
               <td>
@@ -286,6 +296,20 @@ function Logs({ messages }: { messages: Message[] }) {
           ))}
         </tbody>
       </table>
+      </div>
     </section>
   )
+}
+
+function axisProps(c: ChartColors) {
+  return { stroke: c.grid, tick: { fill: c.axis, fontSize: 11 }, tickLine: false, axisLine: false } as const
+}
+
+function tooltipProps(c: ChartColors) {
+  return {
+    cursor: { fill: c.grid, fillOpacity: 0.35 },
+    contentStyle: { background: c.tooltipBg, border: `1px solid ${c.tooltipBorder}`, borderRadius: 8, color: c.text, fontSize: 12 },
+    labelStyle: { color: c.axis },
+    itemStyle: { color: c.text },
+  }
 }

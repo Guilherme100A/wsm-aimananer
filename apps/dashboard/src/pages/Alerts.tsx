@@ -1,6 +1,6 @@
 // Alertas / Webhooks (T11): CRUD dos canais. O segredo nunca é exibido (a API só informa hasSecret).
 import { useState, type FormEvent } from 'react'
-import { ErrorText } from '../components/ui'
+import { ErrorText, PageHeader } from '../components/ui'
 import { api } from '../lib/api'
 import { POLL, usePoll } from '../lib/hooks'
 import { ALERT_EVENTS, type WebhookChannel } from '../lib/types'
@@ -55,7 +55,7 @@ export function Alerts() {
   const hint = CHANNELS.find((c) => c.value === channel)?.urlHint
   return (
     <div data-testid="page-alerts">
-      <h1>Alertas / Webhooks</h1>
+      <PageHeader title="Alertas / Webhooks" subtitle="Canais que recebem os alertas de saúde e de estado das sessões." />
       <form className="panel form" onSubmit={save}>
         <label htmlFor="webhook-name">Nome</label>
         <input id="webhook-name" data-testid="webhook-name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -96,6 +96,7 @@ export function Alerts() {
       </form>
       <ErrorText error={formError ?? error} testId="webhook-error" />
       {status ? <p className="muted">{status}</p> : null}
+      <div className="table-wrap">
       <table>
         <thead>
           <tr>
@@ -111,15 +112,15 @@ export function Alerts() {
         <tbody>
           {(data ?? []).map((w) => (
             <tr key={w.id} data-testid="webhook-row" data-webhook-id={w.id}>
-              <td>{w.name}</td>
+              <td className="cell-strong">{w.name}</td>
               <td>{w.channel}</td>
-              <td>{w.url}</td>
+              <td className="mono">{w.url}</td>
               <td>{w.events.length ? w.events.join(', ') : 'todos'}</td>
               <td>{w.hasSecret ? 'configurado' : '—'}</td>
               <td>
                 <input type="checkbox" checked={w.enabled} onChange={(e) => run(() => api.updateWebhook(w.id, { enabled: e.target.checked }))} />
               </td>
-              <td>
+              <td className="nowrap">
                 <button
                   type="button"
                   className="link"
@@ -147,6 +148,7 @@ export function Alerts() {
           ) : null}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

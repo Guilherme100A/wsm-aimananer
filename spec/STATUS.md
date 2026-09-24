@@ -26,12 +26,13 @@
 | 8 | T18 | Dashboard: login admin e proxy no cadastro | ACCEPTED | Cinzel | Radar | 0 | 23 testes; T12 atualizado e verde (22) |
 | 8 | T19 | Configurações do modelo de LLM | ACCEPTED | Brasa | Prisma | 0 | 55 testes; migration 0003 ai_settings; worker relê config a cada 5 s |
 | 8 | T20 | Adicionar número a grupo (manual) | ACCEPTED | Brasa | Prisma | 0 | 44 testes; 1 alvo por requisição, 1/min por admin, auditado, ponte entre containers |
-| 8 | T21 | Redesign do dashboard | IN_PROGRESS | Nácar | Íris | 0 | critérios em docs/dashboard-design.md |
-| 8 | T22 | Chip pessoal / conexão direta | TODO | Nácar | Íris | 0 | começa após T21 aceito |
+| 8 | T21 | Redesign do dashboard | ACCEPTED | Nácar | Íris | 0 | 22 testes; critérios em docs/dashboard-design.md; regressão T12/T18/T19/T20 verde |
+| 8 | T22 | Chip pessoal / conexão direta | IN_PROGRESS | Nácar | Íris | 0 | |
 
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · harness · Causa raiz dos page.goto pendurados nas suítes de dashboard: o servidor do harness (T12/shared.ts) fazia writeHead antes de ler o arquivo, e um rebuild concorrente do dist gerava ERR_HTTP_HEADERS_SENT com a resposta pendurada. Corrigido pela Íris: leitura antes do cabeçalho, lock de build e cópia privada do dist por servidor. · Orquestrador
 - 2026-09-24 · T22 · Pedido do humano: checkbox "Chip pessoal / conexão direta" (padrão marcada). Sem mudança de API (sessão sem proxy já conecta direto). AC-T06-05 mantido para sessões com proxy. Recusado (pelo Duvidas, confirmado pelo Orquestrador): chips conversarem entre si automaticamente para aquecer (fabricar conversa, regra 1.4 nº 5). · Orquestrador
 - 2026-09-24 · equipe · Novos agentes para o redesign do dashboard: Nácar (Operário) e Íris (Tester), roles WSM existentes. O pedido de design vem direto do humano. Regras: só apps/dashboard/**, manter todos os data-testid, não tocar em pages/Groups* até o T20 ser commitado. · Orquestrador
 - 2026-09-24 · T20 · FECHADO — não será implementado. Pedido final: persona por chip + IA escolhendo grupos + conta admin adicionando chips automaticamente, sem aprovação humana. Recusado por completo (rede de perfis falsos em grupos). Mantido: T14 (grupos manuais auditados). Opcional oferecido: botão de admin para adicionar um número a um grupo, disparado pelo humano, 1 por vez, auditado. · Orquestrador
