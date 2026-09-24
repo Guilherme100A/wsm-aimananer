@@ -103,15 +103,27 @@ importers:
       '@wsm/db':
         specifier: workspace:*
         version: link:../../packages/db
+      drizzle-orm:
+        specifier: ^0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(pg@8.23.0)
 
   packages/core:
     dependencies:
       '@whiskeysockets/baileys':
         specifier: 7.0.0-rc14
         version: 7.0.0-rc14(sharp@0.35.4(@types/node@22.20.4))
+      '@wsm/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.45.3
+        version: 0.45.3(@types/pg@8.23.1)(pg@8.23.0)
       https-proxy-agent:
         specifier: ^9.1.0
         version: 9.1.0
+      pino:
+        specifier: ^10.3.1
+        version: 10.3.1
       socks-proxy-agent:
         specifier: ^10.1.0
         version: 10.1.0

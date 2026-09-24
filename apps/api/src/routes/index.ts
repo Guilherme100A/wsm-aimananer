@@ -3,7 +3,11 @@
 import type { Hono } from 'hono'
 import type { AppDeps, AppEnv } from '../types'
 import { healthRoutes } from './health'
+import { contactsRoutes } from './contacts'
+import { proxiesRoutes } from './proxies'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', healthRoutes(deps))
+  app.route('/', contactsRoutes(deps))
+  app.route('/', proxiesRoutes(deps))
 }

@@ -6,13 +6,13 @@
 | Onda | Tarefa | Título | Estado | Operário | Tester | Ciclos | Notas |
 |---|---|---|---|---|---|---|---|
 | 0 | T00 | Scaffold do monorepo | ACCEPTED | Brasa | Prisma | 0 | 24 testes; sugestão: .dockerignore no T16 |
-| 1 | T01 | Schema do banco | IN_PROGRESS | Cinzel | Radar | 0 | |
-| 1 | T03 | Esqueleto da API | IN_PROGRESS | Malho | Lince | 0 | |
-| 1 | T04 | Abstração de transporte | IN_PROGRESS | Brasa | Prisma | 0 | |
-| 2 | T02 | Criptografia e auth state | TODO | | | 0 | |
-| 2 | T06 | Proxies | TODO | | | 0 | |
-| 2 | T07 | Contatos e consentimento | TODO | | | 0 | |
-| 3 | T05 | Session Manager | TODO | | | 0 | |
+| 1 | T01 | Schema do banco | ACCEPTED | Cinzel | Radar | 0 | 14 testes |
+| 1 | T03 | Esqueleto da API | ACCEPTED | Malho | Lince | 0 | 23 testes |
+| 1 | T04 | Abstração de transporte | ACCEPTED | Brasa | Prisma | 0 | 34 testes |
+| 2 | T02 | Criptografia e auth state | ACCEPTED | Brasa | Prisma | 0 | 43 testes; initCredentialsCrypto() no boot |
+| 2 | T06 | Proxies | ACCEPTED | Malho | Lince | 0 | 26 testes; DELETE de proxy vinculado→409; T05 deve usar connectSession/resolveSessionProxy |
+| 2 | T07 | Contatos e consentimento | ACCEPTED | Cinzel | Radar | 0 | 27 testes; decisões: dup phone→400, opt-out de desconhecido cria contato bloqueado, import não sobrescreve |
+| 3 | T05 | Session Manager | IN_PROGRESS | Brasa | Prisma | 0 | |
 | 4 | T08 | Fila de mensagens | TODO | | | 0 | |
 | 4 | T10 | Warm-up e Health Monitor | TODO | | | 0 | |
 | 5 | T09 | Motor de segurança | TODO | | | 0 | |
