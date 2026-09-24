@@ -1,4 +1,4 @@
-// Testes unitários: o antiban roda em passthrough por configuração EXPLÍCITA (decisão T09; ver docs/antiban.md).
+// Testes unitários: o antiban roda em passthrough por configuração EXPLÍCITA.
 // O código de produção nunca decide o modo por NODE_ENV/VITEST; sem ANTIBAN_MODE o default é `real`.
 import { defineConfig } from 'vitest/config'
 

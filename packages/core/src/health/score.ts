@@ -27,7 +27,7 @@ export interface HealthScore {
 export const HEALTH_WARNING_THRESHOLD = 70
 export const HEALTH_CRITICAL_THRESHOLD = 40
 
-/** Pesos do score (documentados em docs/warmup-health.md). */
+/** Pesos do score. */
 export const HEALTH_WEIGHTS = Object.freeze({
   /** Por falha de envio (teto `failedMax`). */
   failed: 3,

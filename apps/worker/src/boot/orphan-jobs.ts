@@ -2,7 +2,7 @@
 // com o lock válido por até lockDuration (30 s). Com concorrência global 1 por sessão, esse job ocupa a vaga
 // e segura a fila até o BullMQ detectá-lo como travado (30–60 s).
 // No boot, ANTES de qualquer Worker da fila começar, todo job `active` é órfão: o deploy tem um único processo
-// worker (docs/operations.md). O job é devolvido à espera: apagamos o lock, removemos o job e o recriamos com
+// worker. O job é devolvido à espera: apagamos o lock, removemos o job e o recriamos com
 // o mesmo jobId se a mensagem ainda estiver queued/retrying. O processador da fila ignora mensagens fora de
 // queued/retrying, então nada é reenviado depois de `sent` e nada é perdido.
 import type { MessageStatus } from '@wsm/core'

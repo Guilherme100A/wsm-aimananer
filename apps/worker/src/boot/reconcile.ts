@@ -1,5 +1,5 @@
 // Reconciliação no boot (AC-T16-05): mensagens presas em `processing` por um worker que caiu.
-// Política (sem duplicar envio; ver docs/operations.md):
+// Política (sem duplicar envio):
 //  - com transport_message_id                 → sent (o WhatsApp aceitou; só faltou gravar)
 //  - sem transport_message_id e sem marca     → retrying + job de volta à fila (nunca chegou ao transporte)
 //  - sem transport_message_id e COM marca     → failed "delivery state unknown" (pode ter chegado; não reenvia)

@@ -1,6 +1,6 @@
 // AntibanAdapter (T09, AC-T09-03): todo envio efetivo passa por aqui antes de chegar ao transporte.
 // Modo `real` envolve o AntiBan do pacote baileys-antiban (delays, limites, bloqueio de mensagens idênticas).
-// Modo `passthrough` só registra e conta (para testes): nunca é o default. Ver docs/antiban.md.
+// Modo `passthrough` só registra e conta (para testes): nunca é o default.
 import { AntiBan, type AntiBanInput } from 'baileys-antiban'
 import { logger as coreLogger } from '../logger'
 import type { OutgoingContent } from '../transport'

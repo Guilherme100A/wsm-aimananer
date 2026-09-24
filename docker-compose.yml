@@ -2,7 +2,7 @@ name: wa-session-manager
 
 # Portas de host parametrizadas (isolamento com `docker compose -p <projeto>`): sem container_name nem volumes
 # com nome fixo. Os defaults de API_TOKEN, INTERNAL_TOKEN e CREDENTIALS_KEY são SÓ PARA DESENVOLVIMENTO:
-# em qualquer ambiente real, defina valores próprios (ver docs/operations.md).
+# em qualquer ambiente real, defina valores próprios.
 x-app-env: &app-env
   DATABASE_URL: postgres://${POSTGRES_USER:-wsm}:${POSTGRES_PASSWORD:-wsm}@postgres:5432/${POSTGRES_DB:-wsm}
   REDIS_URL: redis://redis:6379
@@ -55,7 +55,7 @@ services:
       <<: *app-env
       # baileys (produção) | fake (testes E2E; expõe /internal/fake/* no servidor interno)
       WA_TRANSPORT: ${WA_TRANSPORT:-baileys}
-      # real (default) | passthrough (somente testes). Ver docs/antiban.md.
+      # real (default) | passthrough (somente testes).
       ANTIBAN_MODE: ${ANTIBAN_MODE:-real}
       ANTIBAN_PRESET: ${ANTIBAN_PRESET:-conservative}
       WORKER_HEALTH_PORT: '9464'

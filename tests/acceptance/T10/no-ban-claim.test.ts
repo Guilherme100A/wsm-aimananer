@@ -3,11 +3,10 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { rootPath } from '../helpers/exec'
-import { FORBIDDEN } from '../../../spec/verify/tasks.mjs'
 import { api, connectedSession, createSession, useHealth } from './shared'
 
-/** Mesma regra do verify (fonte única) + variações comuns em PT/EN. */
-const RULE: RegExp = (FORBIDDEN as Array<{ id: string; regex: RegExp }>).find((r) => r.id === 'F-NO-BAN-CLAIM')!.regex
+/** Frases proibidas + variações comuns em PT/EN. */
+const RULE = /(imune\s+a\s+ban|immune\s+to\s+ban|seguro\s+contra\s+(o\s+)?ban|ban[\s-]?proof|[àa]\s+prova\s+de\s+ban|anti-?ban\s+garantido|nunca\s+(ser[áa]\s+)?banid|never\s+(get\s+)?banned)/i
 const EXTRA = /(garant\w*\s+(que\s+)?(n[ãa]o\s+)?(ser[áa]\s+)?(contra\s+)?ban|100%\s+(seguro|safe)|zero\s+(risk|risco)\s+(of|de)\s+ban|ban[\s-]?free|livre\s+de\s+ban|evita\s+ban\s+(com\s+)?certeza|prevents?\s+bans?\s+completely)/i
 const EXTS = ['.ts', '.tsx', '.js', '.mjs', '.md', '.json', '.html', '.css']
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.turbo', 'coverage'])

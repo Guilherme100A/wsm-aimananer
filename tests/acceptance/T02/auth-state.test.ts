@@ -1,4 +1,4 @@
-// usePostgresAuthState contra um Postgres descartável (spec/INFRA.md). Sem Baileys nos testes (AC-T04-04):
+// usePostgresAuthState contra um Postgres descartável. Sem Baileys nos testes (AC-T04-04):
 // as creds iniciais vêm do próprio auth state (initAuthCreds do produto) e os fixtures de keys são montados aqui.
 import { randomBytes } from 'node:crypto'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'

@@ -1,6 +1,6 @@
 // Harness do T21 (redesign visual do dashboard): o mesmo do T12/T18 (API em processo + FakeTransport + build do
 // dashboard na mesma origem + chromium headless), com contextos de browser emulando viewport, tema e movimento.
-// Contrato combinado com o Operário (Nácar), registrado em docs/dashboard-design.md:
+// Contrato combinado com o Operário (Nácar):
 //   tokens em :root: --bg --surface --surface-2 --text --text-muted --border --accent --accent-fg --success --warning
 //          --danger --radius --radius-sm --shadow --font-sans (extras permitidos);
 //   tema: <html data-theme="light|dark">; sem escolha salva segue prefers-color-scheme; data-testid="theme-toggle" alterna e

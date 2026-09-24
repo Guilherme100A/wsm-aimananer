@@ -1,4 +1,4 @@
-// Usa um Postgres descartável (spec/INFRA.md): DATABASE_URL ou postgres://wsm:wsm@localhost:5432/wsm.
+// Usa um Postgres descartável: DATABASE_URL ou postgres://wsm:wsm@localhost:5432/wsm.
 import { randomBytes } from 'node:crypto'
 import { createDb, createTempDatabase, sessionCredentials, sessions, type Database, type TempDatabase } from '@wsm/db'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

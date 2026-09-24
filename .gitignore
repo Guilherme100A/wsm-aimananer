@@ -3,5 +3,4 @@ dist/
 .env
 *.log
 coverage/
-spec/reports/
 *.tsbuildinfo

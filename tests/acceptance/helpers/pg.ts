@@ -7,7 +7,7 @@ import { exec, type ExecResult } from './exec'
 
 export const DEFAULT_DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://wsm:wsm@127.0.0.1:5432/wsm'
 
-/** Localiza o psql: WSM_PSQL, binários nativos de spec/INFRA.md, ou PATH. */
+/** Localiza o psql: WSM_PSQL, binários nativos, ou PATH. */
 function psqlBin(): string {
   if (process.env.WSM_PSQL) return process.env.WSM_PSQL
   const tools = process.env.WSM_TOOLS ?? 'C:/Users/green/tools'

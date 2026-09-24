@@ -1,6 +1,6 @@
 // T10 — warm-up (AC-T10-01). Progresso e limite diário como função pura da idade da sessão.
 // Cronograma baseado no `WarmUpConfig` do baileys-antiban (defaults: 7 dias, 20 msgs no dia 1,
-// crescimento 1.8×/dia → limite do dia d = round(day1Limit · growthFactor^d)). Ver docs/warmup-health.md.
+// crescimento 1.8×/dia → limite do dia d = round(day1Limit · growthFactor^d)).
 // O warm-up só limita volume: nunca gera mensagens artificiais (SPEC 1.4 #5).
 
 export interface WarmupSchedule {
