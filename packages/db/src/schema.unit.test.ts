@@ -1,9 +1,12 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { getTableColumns, getTableName } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
   E164_REGEX,
   MESSAGE_STATUSES,
+  MIGRATIONS_FOLDER,
   SESSION_STATUSES,
   contacts,
   createDb,
@@ -28,7 +31,14 @@ const TABLES = [
   'health_events',
   'webhooks',
   'audit_logs',
+  // T09 — migration 0001_session_limits
+  'session_limits',
 ]
+
+/** Quantidade de migrations declaradas no journal do drizzle (cresce a cada migration nova). */
+const MIGRATION_COUNT = (
+  JSON.parse(readFileSync(join(MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8')) as { entries: unknown[] }
+).entries.length
 
 // Erro de constraint do Postgres (drizzle embrulha o erro do pg em `cause`).
 async function pgError(p: Promise<unknown>): Promise<{ code?: string; constraint?: string }> {
@@ -83,7 +93,7 @@ describe('schema (Postgres)', () => {
     await tmp?.drop()
   })
 
-  it('cria as 9 tabelas', async () => {
+  it('cria todas as tabelas do schema', async () => {
     const { rows } = await db.$client.query<{ table_name: string }>(
       "select table_name from information_schema.tables where table_schema = 'public'",
     )
@@ -94,7 +104,8 @@ describe('schema (Postgres)', () => {
     await runMigrations(db)
     await runMigrations(db)
     const { rows } = await db.$client.query('select count(*)::int as n from drizzle.__drizzle_migrations')
-    expect(rows[0].n).toBe(1)
+    expect(MIGRATION_COUNT).toBeGreaterThanOrEqual(1)
+    expect(rows[0].n).toBe(MIGRATION_COUNT)
   })
 
   it('proxy_id é único entre sessões, NULL não conflita', async () => {

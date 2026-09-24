@@ -13,3 +13,6 @@ export { setAudit, deriveAudit, type AuditEntry } from './middleware/audit'
 export { parseBearer, tokenMatches } from './middleware/auth'
 export { createLogger } from './logger'
 export { loadConfig, type ApiConfig } from './config'
+
+// T15 — observabilidade (createApiLogger, metricsRoutes, sessionLogContext)
+export * from './observability'

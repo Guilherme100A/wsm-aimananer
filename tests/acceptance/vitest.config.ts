@@ -26,5 +26,11 @@ export default defineConfig({
     testTimeout: 300_000,
     hookTimeout: 300_000,
     teardownTimeout: 60_000,
+    // Decisão do Orquestrador (T09): as suítes ligam o antiban em passthrough de forma explícita
+    // (hooks beforeSend/afterSend rodam, sem espera nem bloqueio). O default do produto é `real`;
+    // os testes do T09 que provam o AntiBan real criam o adapter em modo real com sleep injetado.
+    env: {
+      ANTIBAN_MODE: 'passthrough',
+    },
   },
 })

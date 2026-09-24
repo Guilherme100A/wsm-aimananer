@@ -22,3 +22,6 @@ export * from './queue'
 
 // T11 — alertas (consome `alert` do HealthMonitor e `proxy_unavailable` do ProxyChecker; entrega via webhooks)
 export * from './alerts'
+
+// T15 — observabilidade (createWorkerLogger, startObservabilityServer, attachMetrics)
+export * from './observability'

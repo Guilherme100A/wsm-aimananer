@@ -9,6 +9,8 @@ import { sessionsRoutes } from './sessions'
 import { groupsRoutes } from './groups'
 import { healthSessionRoutes } from './health-session'
 import { messagesRoutes } from './messages'
+import { limitsRoutes } from './messages-limits'
+import { metricsRoutes } from '../observability/metrics-route'
 import { webhooksRoutes } from './webhooks'
 
 export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
@@ -19,5 +21,9 @@ export function registerRoutes(app: Hono<AppEnv>, deps: AppDeps) {
   app.route('/', groupsRoutes(deps))
   app.route('/', healthSessionRoutes(deps))
   app.route('/', messagesRoutes(deps))
+  // T09 — limites de envio por sessão
+  app.route('/', limitsRoutes(deps))
   app.route('/', webhooksRoutes(deps))
+  // T15 — GET /metrics (público, como /health)
+  app.route('/', metricsRoutes(deps))
 }

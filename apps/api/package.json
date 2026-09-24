@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^2.1.1",
+    "@opentelemetry/api": "^1.9.1",
     "@wsm/core": "workspace:*",
     "@wsm/db": "workspace:*",
     "drizzle-orm": "^0.45.3",

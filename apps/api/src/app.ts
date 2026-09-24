@@ -5,6 +5,7 @@ import { notFound, onError } from './errors'
 import { auditMiddleware } from './middleware/audit'
 import { bearerAuth } from './middleware/auth'
 import { requestLogger } from './middleware/request-log'
+import { sessionLogContext, sessionRequestLogger } from './observability/session-context'
 import { registerRoutes } from './routes/index'
 import type { AppDeps, AppEnv } from './types'
 
@@ -13,7 +14,10 @@ export function createApp(deps: AppDeps) {
 
   // Middlewares no app raiz: valem também para rotas registradas depois de createApp.
   app.use('*', requestId({ headerName: 'x-request-id' }))
+  // T15: session_id no contexto de log (antes do requestLogger, para valer também na linha 'request completed')
+  app.use('*', sessionLogContext())
   app.use('*', requestLogger(deps.logger))
+  app.use('*', sessionRequestLogger())
   app.use('/api/*', bearerAuth(deps.apiToken))
   app.use('/api/*', auditMiddleware(deps.db))
 

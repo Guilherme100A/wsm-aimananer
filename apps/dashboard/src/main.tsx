@@ -1,9 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-
-function App() {
-  return <h1>WA Session Manager</h1>
-}
+import { App } from './App'
+import './styles.css'
 
 const root = document.getElementById('root')
 if (root) {

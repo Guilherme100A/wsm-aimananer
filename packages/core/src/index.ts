@@ -32,3 +32,11 @@ export * from './send/deliver'
 
 // T11 — alertas (ALERT_EVENTS, signWebhookBody, WebhookService, AlertDispatcher)
 export * from './alerts'
+
+// T15 — observabilidade (createMetrics, attachMetrics, createServiceLogger, contexto de log)
+export * from './observability'
+
+// T09 — motor de segurança (SendPipeline, GATE_ORDER), AntibanAdapter (baileys-antiban) e limites por sessão
+export * from './send/pipeline'
+export * from './antiban'
+export * from './safety'
