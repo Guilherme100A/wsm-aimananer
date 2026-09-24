@@ -5,10 +5,10 @@
 
 | Onda | Tarefa | Título | Estado | Operário | Tester | Ciclos | Notas |
 |---|---|---|---|---|---|---|---|
-| 0 | T00 | Scaffold do monorepo | TODO | | | 0 | |
-| 1 | T01 | Schema do banco | TODO | | | 0 | |
-| 1 | T03 | Esqueleto da API | TODO | | | 0 | |
-| 1 | T04 | Abstração de transporte | TODO | | | 0 | |
+| 0 | T00 | Scaffold do monorepo | ACCEPTED | Brasa | Prisma | 0 | 24 testes; sugestão: .dockerignore no T16 |
+| 1 | T01 | Schema do banco | IN_PROGRESS | Cinzel | Radar | 0 | |
+| 1 | T03 | Esqueleto da API | IN_PROGRESS | Malho | Lince | 0 | |
+| 1 | T04 | Abstração de transporte | IN_PROGRESS | Brasa | Prisma | 0 | |
 | 2 | T02 | Criptografia e auth state | TODO | | | 0 | |
 | 2 | T06 | Proxies | TODO | | | 0 | |
 | 2 | T07 | Contatos e consentimento | TODO | | | 0 | |
@@ -26,6 +26,10 @@
 ## Bloqueios e decisões
 
 <!-- Data · Tarefa · Pergunta/decisão · Quem decidiu -->
+- 2026-09-24 · infra · Humano autorizou instalar dependências. Instalados nativos: PostgreSQL 16.4, Redis 8.10, docker CLI + compose v5 (sem daemon). verify.mjs usa infra local quando não há Docker daemon (spec/INFRA.md). T16 AC-T16-01 fica BLOCKED sem Docker. · Orquestrador
+- 2026-09-24 · equipe · Nova equipe (a anterior não estava conectada): Operários Brasa, Cinzel, Malho; Testers Prisma, Radar. Docs de libs via context7. · Orquestrador
+- 2026-09-24 · todas · Máquina sem Docker/Postgres/Redis/WSL. pnpm 9.15.9 instalado via npm -g. Infra de teste pendente de decisão do humano. · orquestrador-pai
+- 2026-09-24 · equipe · Operários: Forja, Bigorna, Torno. Testers: Lupa, Sonda. Commits feitos só pelo orquestrador. · orquestrador-pai
 
 ## Escalonamentos ao humano
 

@@ -1,0 +1,81 @@
+name: wa-session-manager
+
+x-app-env: &app-env
+  DATABASE_URL: postgres://${POSTGRES_USER:-wsm}:${POSTGRES_PASSWORD:-wsm}@postgres:5432/${POSTGRES_DB:-wsm}
+  REDIS_URL: redis://redis:6379
+  API_TOKEN: ${API_TOKEN:-}
+  CREDENTIALS_KEY: ${CREDENTIALS_KEY:-}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  AI_PROVIDER_API_KEY: ${AI_PROVIDER_API_KEY:-}
+  AI_MODEL_SMALL: ${AI_MODEL_SMALL:-}
+  AI_MODEL_LARGE: ${AI_MODEL_LARGE:-}
+  SMTP_URL: ${SMTP_URL:-}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wsm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wsm}
+      POSTGRES_DB: ${POSTGRES_DB:-wsm}
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      <<: *app-env
+      PORT: '3000'
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      <<: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  redisdata:
