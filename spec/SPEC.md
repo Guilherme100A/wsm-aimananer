@@ -194,6 +194,7 @@ Formato de erro: `{ "error": { "code": "…", "message": "…", "details"?: … 
 | 8 | T19 | Configurações do modelo de LLM | T13, T12 |
 | 8 | T20 | Adicionar número a grupo (manual) | T14, T16, T18 |
 | 8 | T21 | Redesign do dashboard | T12, T18, T19 |
+| 8 | T22 | Chip pessoal / conexão direta | T21, T18 |
 
 ---
 
@@ -546,6 +547,20 @@ interface WaTransport {
 - **AC-T21-05** ver docs/dashboard-design.md.
 - **AC-T21-06** ver docs/dashboard-design.md.
 - **AC-T21-07** ver docs/dashboard-design.md.
+
+
+### T22 — Chip pessoal / conexão direta no cadastro da sessão
+**Origem:** pedido do humano em 2026-09-24. Chips pessoais, com histórico, conectam pelo IP normal da máquina, sem proxy.
+**Paths:** `apps/dashboard/**` (a API não muda: sessão sem proxy já conecta direto, como diz o AC-T17-03)
+**Depende de:** T21 aceito (mesmos arquivos do dashboard).
+**Critérios de aceitação**
+- **AC-T22-01** "+ Adicionar número" tem a checkbox **"Chip pessoal / conexão direta (sem proxy)"**, **marcada por padrão**.
+  - Marcada: os campos de proxy ficam ocultos, e a sessão é criada **sem** `proxy` nem `proxyId`.
+- **AC-T22-02** Desmarcada, aparece o bloco de proxy do T18, que passa a ser **obrigatório**: sem host e porta válidos, o formulário mostra erro e não faz o POST.
+  - A sessão é criada com o proxy inline, e o AC-T06-05 continua valendo: com proxy configurado, nunca conecta sem ele.
+- **AC-T22-03** A lista de sessões e o detalhe mostram **"Conexão direta"** quando `proxy` é null (no lugar de "—").
+  - No detalhe, dá para adicionar um proxy depois (PATCH do T17), com o aviso de restart.
+- **AC-T22-04** Os `data-testid` do T18, T21 e T12 continuam; o novo (aditivo) é `new-direct-connection`. As suítes T12, T18, T21 e T17 seguem verdes, e o build passa.
 
 ---
 

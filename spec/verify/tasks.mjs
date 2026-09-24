@@ -197,6 +197,13 @@ export const TASKS = [
     commands: [...std('dashboard'), 'pnpm --filter @wsm/dashboard build'],
     infra: false,
   },
+  {
+    id: 'T22', title: 'Chip pessoal / conexão direta', wave: 8, deps: ['T21', 'T18'],
+    paths: ['apps/dashboard/**'],
+    requiredFiles: ['apps/dashboard/src/main.tsx'],
+    commands: [...std('dashboard'), 'pnpm --filter @wsm/dashboard build'],
+    infra: false,
+  },
 ]
 
 // Regras proibidas — aplicadas em TODO --role operario (SPEC 1.4).
