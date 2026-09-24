@@ -59,14 +59,28 @@ export function parseProxyForm(v: ProxyFormValues, opts: { keepPassword?: boolea
   return { ok: true, proxy }
 }
 
-/** `host:port` para a lista de sessões; `—` sem proxy. */
+/** Sessão sem proxy conecta pelo IP da máquina (T22, AC-T17-03). */
+export const DIRECT_CONNECTION = 'Conexão direta'
+
+/**
+ * Proxy do cadastro (T22): com "conexão direta" marcada, a sessão vai sem proxy e os campos são ignorados;
+ * desmarcada, o proxy passa a ser obrigatório (host e porta válidos).
+ */
+export function parseNewSessionProxy(direct: boolean, v: ProxyFormValues): ProxyFormResult {
+  if (direct) return { ok: true, proxy: null }
+  const parsed = parseProxyForm(v)
+  if (parsed.ok && !parsed.proxy) return { ok: false, error: 'Informe o IP/host e a porta do proxy, ou marque conexão direta' }
+  return parsed
+}
+
+/** `host:port` para a lista de sessões; "Conexão direta" sem proxy. */
 export function proxyAddress(proxy: SessionProxy | null | undefined): string {
-  return proxy ? `${proxy.host}:${proxy.port}` : '—'
+  return proxy ? `${proxy.host}:${proxy.port}` : DIRECT_CONNECTION
 }
 
 /** `protocol://user:***@host:port` (a senha nunca aparece; `***` só indica que existe). */
 export function proxyLabel(proxy: SessionProxy | null | undefined): string {
-  if (!proxy) return 'Sem proxy'
+  if (!proxy) return DIRECT_CONNECTION
   const auth = proxy.username ? `${proxy.username}${proxy.hasPassword ? ':***' : ''}@` : proxy.hasPassword ? ':***@' : ''
   return `${proxy.protocol}://${auth}${proxy.host}:${proxy.port}`
 }

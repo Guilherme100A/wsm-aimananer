@@ -4,10 +4,12 @@
 //   login: login-username ('Usuário'), login-password ('Senha'), login-submit, login-error; token em sessionStorage 'wsm.token';
 //          nav-logout → POST /api/auth/logout; qualquer 401 → #/login.
 //   nav:   sem nav-proxies; #/proxies → #/sessions.
+//   T22:   checkbox new-direct-connection marcada por padrão esconde o bloco de proxy (enableProxyFields desmarca);
+//          sessão sem proxy aparece como 'Conexão direta' na lista e no detalhe.
 //   novo:  new-name, new-phone, bloco 'Proxy' (new-proxy-protocol|host|port|username|password), new-note, gen-qr, gen-pairing;
 //          validação no cliente em new-proxy-error (sem POST); erros da API em auth-error.
-//   lista: session-proxy em cada session-row ('host:port' ou '—').
-//   detalhe: detail-proxy ('protocol://user:***@host:port' ou 'Sem proxy'), proxy-edit → edit-proxy-* + proxy-save/proxy-cancel/
+//   lista: session-proxy em cada session-row ('host:port' ou 'Conexão direta' — T22; antes '—').
+//   detalhe: detail-proxy ('protocol://user:***@host:port' ou 'Conexão direta' — T22; antes 'Sem proxy'), proxy-edit → edit-proxy-* + proxy-save/proxy-cancel/
 //          proxy-remove, proxy-error, proxy-restart-warning ('Exige restart da sessão para aplicar o novo proxy.').
 import { randomBytes } from 'node:crypto'
 import { expect } from 'vitest'

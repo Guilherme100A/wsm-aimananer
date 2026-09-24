@@ -60,12 +60,13 @@ export function SessionProxyPanel({ session: polled, onChanged }: { session: Ses
         <h2>Proxy</h2>
         {!editing ? (
           <button type="button" className="secondary" data-testid="proxy-edit" onClick={open}>
-            Editar proxy
+            {proxy ? 'Editar proxy' : 'Adicionar proxy'}
           </button>
         ) : null}
       </div>
       <p className="proxy-value" data-testid="detail-proxy">
         <span data-testid="session-proxy">{proxyLabel(proxy)}</span>
+        {proxy ? null : <span className="muted"> · Sem proxy (usa o IP desta máquina)</span>}
       </p>
       {editing || session.requiresRestart ? (
         <p className="warning" role="status" data-testid="proxy-restart-warning">

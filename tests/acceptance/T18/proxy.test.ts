@@ -1,7 +1,7 @@
 // AC-T18-03 — a página Proxies sai da navegação; o detalhe da sessão mostra o proxy (senha mascarada) e permite editar
 // ou remover via PATCH (AC-T17-04), avisando que exige restart; a lista de sessões mostra o IP do proxy de cada número.
 import { describe, expect, it } from 'vitest'
-import { createSessionWithProxy, getSession, go, hashOf, randomSecret, recordApiRequests, tid, useDashboard } from './shared'
+import { DIRECT_CONNECTION, createSessionWithProxy, getSession, go, hashOf, randomSecret, recordApiRequests, tid, useDashboard } from './shared'
 
 const text = async (loc: any) => ((await loc.textContent()) ?? '').trim()
 
@@ -18,7 +18,7 @@ describe('T18 — proxy dentro da sessão', () => {
     expect(await page.locator(tid('page-proxies')).count()).toBe(0)
   })
 
-  it('AC-T18-03 a lista de sessões mostra o IP do proxy de cada número (ou —)', async () => {
+  it('AC-T18-03 a lista de sessões mostra o IP do proxy de cada número (ou Conexão direta, T22)', async () => {
     const withProxy = await createSessionWithProxy(ctx, { host: '10.20.30.40', port: 3128 })
     const without = await createSessionWithProxy(ctx, null)
     const page = await ctx.newPage()
@@ -28,7 +28,7 @@ describe('T18 — proxy dentro da sessão', () => {
     await rowA.waitFor({ state: 'visible' })
     await expect.poll(() => text(rowA.locator(tid('session-proxy'))), { timeout: 10_000 }).toContain('10.20.30.40')
     expect(await text(rowA.locator(tid('session-proxy')))).toContain('3128')
-    await expect.poll(() => text(rowB.locator(tid('session-proxy'))), { timeout: 10_000 }).toBe('—')
+    await expect.poll(() => text(rowB.locator(tid('session-proxy'))), { timeout: 10_000 }).toBe(DIRECT_CONNECTION)
   })
 
   it('AC-T18-03 o detalhe mostra o proxy com a senha mascarada', async () => {
@@ -80,7 +80,7 @@ describe('T18 — proxy dentro da sessão', () => {
     expect(await text(page.locator(tid('proxy-restart-warning')))).toMatch(/restart/i)
   })
 
-  it('AC-T18-03 remover o proxy no detalhe faz PATCH {proxy:null} e mostra Sem proxy', async () => {
+  it('AC-T18-03 remover o proxy no detalhe faz PATCH {proxy:null} e mostra Conexão direta (T22)', async () => {
     const s = await createSessionWithProxy(ctx, { host: '10.8.8.8', port: 8888 })
     const page = await ctx.newPage()
     page.on('dialog', (d: any) => d.accept().catch(() => {}))
@@ -93,7 +93,7 @@ describe('T18 — proxy dentro da sessão', () => {
     await expect.poll(() => seen.find((r) => r.method === 'PATCH' && r.path === `/api/sessions/${s.id}`), { timeout: 10_000 }).toBeTruthy()
     expect(seen.find((r) => r.method === 'PATCH')!.body).toMatchObject({ proxy: null })
     await expect.poll(async () => (await getSession(ctx, s.id)).proxy ?? null, { timeout: 10_000 }).toBeNull()
-    await expect.poll(() => text(page.locator(tid('detail-proxy'))), { timeout: 15_000 }).toContain('Sem proxy')
+    await expect.poll(() => text(page.locator(tid('detail-proxy'))), { timeout: 15_000 }).toContain(DIRECT_CONNECTION)
     await page.locator(tid('proxy-restart-warning')).waitFor({ state: 'visible' })
   })
 

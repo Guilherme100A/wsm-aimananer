@@ -4,7 +4,7 @@
 import { randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { lit, sqlOk } from '../helpers/pg'
-import { findSessionByName, getSession, go, randomPhone, randomSecret, recordApiRequests, tid, useDashboard } from './shared'
+import { enableProxyFields, findSessionByName, getSession, go, randomPhone, randomSecret, recordApiRequests, tid, useDashboard } from './shared'
 
 const LABELS = ['Nome', 'Número', 'Proxy', 'Protocolo', 'IP/Host', 'Porta', 'Usuário', 'Senha', 'Observação']
 
@@ -21,6 +21,7 @@ describe('T18 — adicionar número com proxy', () => {
 
   it('AC-T18-02 o formulário tem Nome, Número, bloco Proxy (Protocolo, IP/Host, Porta, Usuário, Senha), Observação e os dois botões', async () => {
     const page = await openForm()
+    await enableProxyFields(page) // T22: bloco de proxy oculto por padrão
     for (const f of ['new-name', 'new-phone', 'new-proxy-protocol', 'new-proxy-host', 'new-proxy-port', 'new-proxy-username', 'new-proxy-password', 'new-note'])
       await page.locator(tid(f)).waitFor({ state: 'visible' })
     for (const label of LABELS) expect(await page.getByText(label, { exact: true }).count(), `rótulo ${label}`).toBeGreaterThan(0)
@@ -39,6 +40,7 @@ describe('T18 — adicionar número com proxy', () => {
     const pass = randomSecret()
     await page.locator(tid('new-name')).fill(name)
     await page.locator(tid('new-phone')).fill(randomPhone())
+    await enableProxyFields(page) // T22
     await page.locator(tid('new-proxy-protocol')).selectOption('socks5')
     await page.locator(tid('new-proxy-host')).fill('10.9.8.7')
     await page.locator(tid('new-proxy-port')).fill('1080')
@@ -70,7 +72,8 @@ describe('T18 — adicionar número com proxy', () => {
     await page.locator(tid('qr-image')).waitFor({ state: 'visible', timeout: 15_000 })
   })
 
-  it('AC-T18-02 bloco de proxy vazio cria a sessão sem proxy', async () => {
+  // T22: com a conexão direta (padrão), o bloco de proxy fica oculto e a sessão é criada sem proxy.
+  it('AC-T18-02 sem proxy (conexão direta, padrão do T22) cria a sessão sem proxy', async () => {
     const page = await openForm()
     const seen = recordApiRequests(page)
     const name = `sem-proxy-${randomBytes(3).toString('hex')}`
@@ -88,6 +91,7 @@ describe('T18 — adicionar número com proxy', () => {
     const name = `pair-proxy-${randomBytes(3).toString('hex')}`
     await page.locator(tid('new-name')).fill(name)
     await page.locator(tid('new-phone')).fill(randomPhone())
+    await enableProxyFields(page) // T22
     await page.locator(tid('new-proxy-host')).fill('10.1.1.1')
     await page.locator(tid('new-proxy-port')).fill('8080')
     await page.locator(tid('gen-pairing')).click()
@@ -112,6 +116,7 @@ describe('T18 — adicionar número com proxy', () => {
       const name = `invalido-${randomBytes(3).toString('hex')}`
       await page.locator(tid('new-name')).fill(name)
       await page.locator(tid('new-phone')).fill(randomPhone())
+      await enableProxyFields(page) // T22
       for (const [k, v] of Object.entries(fields)) await page.locator(tid(`new-proxy-${k}`)).fill(v)
       await page.locator(tid('gen-qr')).click()
       const err = page.locator(tid('new-proxy-error'))

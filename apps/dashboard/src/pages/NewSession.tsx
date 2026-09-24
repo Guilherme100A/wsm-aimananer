@@ -4,7 +4,7 @@ import { ProxyFields } from '../components/ProxyFields'
 import { ErrorText, PageHeader, StateIndicator } from '../components/ui'
 import { api } from '../lib/api'
 import { POLL } from '../lib/hooks'
-import { emptyProxyForm, parseProxyForm, type ProxyInput } from '../lib/proxy-form'
+import { emptyProxyForm, parseNewSessionProxy, type ProxyInput } from '../lib/proxy-form'
 import { routeHref } from '../lib/router'
 import type { Session, SessionState } from '../lib/types'
 
@@ -13,6 +13,8 @@ type Mode = 'qr' | 'pairing'
 export function NewSession() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  // T22: chip pessoal conecta direto pelo IP da máquina (padrão); desmarcado, o proxy é obrigatório.
+  const [direct, setDirect] = useState(true)
   const [proxy, setProxy] = useState(emptyProxyForm)
   const [proxyError, setProxyError] = useState<string>()
   const [note, setNote] = useState('')
@@ -66,7 +68,7 @@ export function NewSession() {
   async function start(e: FormEvent | undefined, m: Mode) {
     e?.preventDefault()
     // Validação do proxy no cliente, antes de qualquer chamada à API (sessão já criada: o bloco fica travado).
-    const parsed = session ? ({ ok: true, proxy: null } as const) : parseProxyForm(proxy)
+    const parsed = session ? ({ ok: true, proxy: null } as const) : parseNewSessionProxy(direct, proxy)
     setProxyError(parsed.ok ? undefined : parsed.error)
     if (!parsed.ok) return
     setBusy(true)
@@ -111,7 +113,23 @@ export function NewSession() {
           disabled={!!session}
           required
         />
-        <ProxyFields prefix="new-proxy" value={proxy} onChange={(v) => setProxy(v)} disabled={!!session} />
+        <label className="check direct-connection" htmlFor="new-direct-connection">
+          <input
+            id="new-direct-connection"
+            data-testid="new-direct-connection"
+            type="checkbox"
+            checked={direct}
+            disabled={!!session}
+            aria-controls="new-proxy-fields"
+            onChange={(e) => {
+              setDirect(e.target.checked)
+              setProxyError(undefined)
+            }}
+          />
+          <span>Chip pessoal / conexão direta (sem proxy)</span>
+        </label>
+        {direct ? <p className="hint direct-hint">O número conecta pelo IP desta máquina. Desmarque para usar um proxy.</p> : null}
+        <ProxyFields prefix="new-proxy" value={proxy} onChange={(v) => setProxy(v)} disabled={!!session} hidden={direct} />
         {proxyError ? (
           <p className="error" role="alert" data-testid="new-proxy-error">
             {proxyError}

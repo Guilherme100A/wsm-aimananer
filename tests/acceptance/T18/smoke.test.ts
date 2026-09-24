@@ -5,7 +5,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { tail } from '../helpers/exec'
-import { ADMIN_PASSWORD, ADMIN_USERNAME, DIST, buildDashboard, findSessionByName, go, hashOf, randomPhone, statusOf, tid, useDashboard } from './shared'
+import { ADMIN_PASSWORD, ADMIN_USERNAME, DIST, enableProxyFields, buildDashboard, findSessionByName, go, hashOf, randomPhone, statusOf, tid, useDashboard } from './shared'
 
 describe('T18 — build', () => {
   it('AC-T18-04 pnpm --filter @wsm/dashboard build passa e o bundle não guarda o token em localStorage', () => {
@@ -44,6 +44,7 @@ describe('T18 — smoke E2E', () => {
     const name = `smoke18-${randomBytes(3).toString('hex')}`
     await page.locator(tid('new-name')).fill(name)
     await page.locator(tid('new-phone')).fill(randomPhone())
+    await enableProxyFields(page) // T22: bloco de proxy oculto por padrão
     await page.locator(tid('new-proxy-protocol')).selectOption('http')
     await page.locator(tid('new-proxy-host')).fill('10.44.44.44')
     await page.locator(tid('new-proxy-port')).fill('3129')

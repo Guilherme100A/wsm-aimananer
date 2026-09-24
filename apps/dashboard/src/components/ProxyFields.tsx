@@ -7,6 +7,7 @@ export function ProxyFields({
   value,
   onChange,
   disabled,
+  hidden,
   passwordPlaceholder,
 }: {
   /** Prefixo dos ids/data-testids (ex.: `new-proxy` → `new-proxy-host`). */
@@ -14,12 +15,14 @@ export function ProxyFields({
   value: ProxyFormValues
   onChange: (v: ProxyFormValues) => void
   disabled?: boolean
+  /** Oculta o bloco mantendo os campos no DOM (T22: conexão direta). */
+  hidden?: boolean
   passwordPlaceholder?: string
 }) {
   const set = <K extends keyof ProxyFormValues>(k: K, v: ProxyFormValues[K]) => onChange({ ...value, [k]: v })
   const id = (f: string) => `${prefix}-${f}`
   return (
-    <fieldset className="proxy-fields" disabled={disabled}>
+    <fieldset className="proxy-fields" id={id('fields')} disabled={disabled} hidden={hidden}>
       <legend>Proxy</legend>
       <label htmlFor={id('protocol')}>Protocolo</label>
       <select id={id('protocol')} data-testid={id('protocol')} value={value.protocol} onChange={(e) => set('protocol', e.target.value as ProxyProtocol)}>

@@ -289,7 +289,9 @@ async function gotoHash(page: any, url: string) {
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT })
   } catch (e) {
-    if (!/Timeout/i.test(String((e as Error)?.message ?? e))) throw e
+    // timeout ou erro transitório de rede do SO (ex.: net::ERR_NO_BUFFER_SPACE com as portas efêmeras esgotadas)
+    if (!/Timeout|net::ERR_/i.test(String((e as Error)?.message ?? e))) throw e
+    await new Promise((r) => setTimeout(r, 1_000))
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT })
   }
 }
@@ -307,6 +309,18 @@ export async function doLogin(ctx: DCtx, page: any, username = ADMIN_USERNAME, p
 export async function go(ctx: DCtx, page: any, hashPath: string) {
   await gotoHash(page, `${ctx.base}/#${hashPath}`)
 }
+
+/**
+ * T22: "Chip pessoal / conexão direta (sem proxy)" vem marcada e esconde o bloco de proxy. Para usar os campos
+ * new-proxy-*, desmarca new-direct-connection e espera o bloco aparecer.
+ */
+export async function enableProxyFields(page: any) {
+  await page.locator(tid('new-direct-connection')).uncheck()
+  await page.locator(tid('new-proxy-host')).waitFor({ state: 'visible' })
+}
+
+/** Texto que a lista e o detalhe mostram para sessão sem proxy (AC-T22-03; antes: "—" / "Sem proxy"). */
+export const DIRECT_CONNECTION = 'Conexão direta'
 
 export const textOf = async (page: any, testId: string) => ((await page.locator(tid(testId)).first().textContent()) ?? '').trim()
 

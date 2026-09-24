@@ -12,6 +12,7 @@ const SCREENS: Record<string, string[]> = {
   sessions: ['page-sessions', 'add-session', 'session-row', 'session-state', 'session-link', 'session-proxy'],
   'new-session': [
     'page-new-session',
+    'new-direct-connection', // T22 (os new-proxy-* seguem no DOM, ocultos enquanto marcada)
     'new-name',
     'new-phone',
     'new-note',

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ApiRequestError, api, setFetch } from './api'
 import { getToken, setToken } from './auth'
 import { loginErrorMessage } from './login'
-import { emptyProxyForm, parseProxyForm, proxyAddress, proxyFormFrom, proxyLabel, type ProxyFormValues } from './proxy-form'
+import { DIRECT_CONNECTION, emptyProxyForm, parseNewSessionProxy, parseProxyForm, proxyAddress, proxyFormFrom, proxyLabel, type ProxyFormValues } from './proxy-form'
 import { signOut } from './signout'
 import type { SessionProxy } from './types'
 
@@ -49,20 +49,40 @@ describe('parseProxyForm (AC-T18-02)', () => {
   })
 })
 
+describe('parseNewSessionProxy (T22)', () => {
+  const filled: ProxyFormValues = { ...emptyProxyForm(), host: '10.0.0.9', port: '3128' }
+
+  it('conexão direta marcada: sem proxy, mesmo com campos preenchidos', () => {
+    expect(parseNewSessionProxy(true, emptyProxyForm())).toEqual({ ok: true, proxy: null })
+    expect(parseNewSessionProxy(true, filled)).toEqual({ ok: true, proxy: null })
+  })
+
+  it('desmarcada: proxy vazio é erro', () => {
+    const r = parseNewSessionProxy(false, emptyProxyForm())
+    expect(r.ok).toBe(false)
+  })
+
+  it('desmarcada: aplica a validação do T18', () => {
+    expect(parseNewSessionProxy(false, { ...filled, port: '' }).ok).toBe(false)
+    expect(parseNewSessionProxy(false, { ...filled, port: '70000' }).ok).toBe(false)
+    expect(parseNewSessionProxy(false, filled)).toEqual({ ok: true, proxy: { protocol: 'http', host: '10.0.0.9', port: 3128 } })
+  })
+})
+
 describe('exibição do proxy (AC-T18-03)', () => {
   const p: SessionProxy = { id: 'x', protocol: 'http', host: '10.1.2.3', port: 8080, username: 'user', hasPassword: true }
 
   it('lista: host:port ou —', () => {
     expect(proxyAddress(p)).toBe('10.1.2.3:8080')
-    expect(proxyAddress(null)).toBe('—')
-    expect(proxyAddress(undefined)).toBe('—')
+    expect(proxyAddress(null)).toBe('Conexão direta')
+    expect(proxyAddress(undefined)).toBe(DIRECT_CONNECTION)
   })
 
   it('detalhe: senha sempre mascarada', () => {
     expect(proxyLabel(p)).toBe('http://user:***@10.1.2.3:8080')
     expect(proxyLabel({ ...p, hasPassword: false })).toBe('http://user@10.1.2.3:8080')
     expect(proxyLabel({ ...p, username: null, hasPassword: false, protocol: 'socks5' })).toBe('socks5://10.1.2.3:8080')
-    expect(proxyLabel(null)).toBe('Sem proxy')
+    expect(proxyLabel(null)).toBe('Conexão direta')
   })
 
   it('formulário de edição parte do proxy atual, sem senha', () => {

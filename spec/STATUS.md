@@ -27,7 +27,7 @@
 | 8 | T19 | Configurações do modelo de LLM | ACCEPTED | Brasa | Prisma | 0 | 55 testes; migration 0003 ai_settings; worker relê config a cada 5 s |
 | 8 | T20 | Adicionar número a grupo (manual) | ACCEPTED | Brasa | Prisma | 0 | 44 testes; 1 alvo por requisição, 1/min por admin, auditado, ponte entre containers |
 | 8 | T21 | Redesign do dashboard | ACCEPTED | Nácar | Íris | 0 | 22 testes; critérios em docs/dashboard-design.md; regressão T12/T18/T19/T20 verde |
-| 8 | T22 | Chip pessoal / conexão direta | IN_PROGRESS | Nácar | Íris | 0 | |
+| 8 | T22 | Chip pessoal / conexão direta | ACCEPTED | Nácar | Íris | 0 | 12 testes; checkbox padrão marcada; testes T12/T18/T21 ajustados |
 
 ## Bloqueios e decisões
 

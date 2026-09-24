@@ -3,7 +3,7 @@
 // "Gerar Pairing Code"; QR/código exibido e atualizado até conectar.
 import { describe, expect, it } from 'vitest'
 import { randomBytes } from 'node:crypto'
-import { api, createSession, go, hashOf, INDICATORS, randomPhone, setStatus, statusOf, tid, useDashboard } from './shared'
+import { api, createSession, enableProxyFields, go, hashOf, INDICATORS, randomPhone, setStatus, statusOf, tid, useDashboard } from './shared'
 
 describe('T12 — lista de sessões e adicionar número', () => {
   const ctx = useDashboard()
@@ -46,6 +46,7 @@ describe('T12 — lista de sessões e adicionar número', () => {
     const add = page.locator(tid('add-session'))
     expect(((await add.textContent()) ?? '').trim()).toBe('+ Adicionar número')
     await add.click()
+    await enableProxyFields(page) // T22: o bloco de proxy vem oculto (conexão direta marcada)
     for (const f of ['new-name', 'new-phone', 'new-proxy-protocol', 'new-proxy-host', 'new-proxy-port', 'new-note']) await page.locator(tid(f)).waitFor({ state: 'visible' })
     for (const label of ['Nome', 'Número', 'Proxy', 'Observação']) expect(await page.getByText(label, { exact: true }).count(), `rótulo ${label}`).toBeGreaterThan(0)
     expect(((await page.locator(tid('gen-qr')).textContent()) ?? '').trim()).toBe('Gerar QR Code')
@@ -58,6 +59,7 @@ describe('T12 — lista de sessões e adicionar número', () => {
     const name = `qr-${randomBytes(3).toString('hex')}`
     await page.locator(tid('new-name')).fill(name)
     await page.locator(tid('new-phone')).fill(randomPhone())
+    await enableProxyFields(page) // T22
     await page.locator(tid('new-proxy-host')).fill('127.0.0.1')
     await page.locator(tid('new-proxy-port')).fill('18081')
     await page.locator(tid('new-note')).fill('observação do teste')
