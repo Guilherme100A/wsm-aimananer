@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { exec, type ExecResult } from './exec'
 
-export const DEFAULT_DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://wsm:wsm@localhost:5432/wsm'
+export const DEFAULT_DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://wsm:wsm@127.0.0.1:5432/wsm'
 
 /** Localiza o psql: WSM_PSQL, binários nativos de spec/INFRA.md, ou PATH. */
 function psqlBin(): string {

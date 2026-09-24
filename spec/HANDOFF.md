@@ -1,6 +1,14 @@
 # HANDOFF — wa-session-manager
 
-> **ATUALIZAÇÃO FINAL (2026-09-24):** as 17 tarefas estão ACCEPTED e commitadas. O conteúdo abaixo é histórico. Pendências opcionais: (1) rodar de novo o `node spec/verify/verify.mjs T16 --role tester` isolado, depois da regressão interrompida por memória; (2) se quiser, limitar a VM do Docker via .wslconfig. Infra: Docker (spec/INFRA.md). Rode testes com VITEST_MAX_WORKERS=4, que o verify.mjs já aplica.
+> **ESTADO FINAL (2026-09-24):** todas as tarefas T00-T22 estão ACCEPTED e commitadas. A regressão final serial passou nas 46 verificações (operario + tester). Não há pendências obrigatórias.
+>
+> **Como rodar:** Docker Desktop com postgres/redis via `docker compose up -d --wait postgres redis`, sempre em **127.0.0.1**, não localhost (ver spec/INFRA.md). Testes com `node spec/verify/verify.mjs <Tarefa> --role operario|tester`, uma suíte por vez; o verify.mjs já aplica VITEST_MAX_WORKERS=4, pnpm com 1 pacote por vez e as URLs 127.0.0.1. As suítes de dashboard (T12, T18-T22) compartilham o build: um agente por vez.
+>
+> **Credenciais:** troque ADMIN_PASSWORD (padrão nimda), API_TOKEN, CREDENTIALS_KEY, AUTH_SECRET e INTERNAL_TOKEN antes de produção. O .env não é versionado.
+>
+> **Recusado e registrado (não reabrir):** entrada automática em grupos, personas por chip, IA escolhendo grupos, conversas automáticas entre chips para aquecer e técnicas para evitar a detecção de automação.
+>
+> O conteúdo abaixo é histórico.
 
 > Escrito pelo Orquestrador em 2026-09-24, por volta de 02:40, antes de o humano fechar o Maestri.
 > O estado de cada tarefa está em `spec/STATUS.md`. Este arquivo diz **como continuar**.

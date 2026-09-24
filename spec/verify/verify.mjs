@@ -61,6 +61,10 @@ const CHILD_ENV = {
   ...process.env,
   VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS ?? '4',
   npm_config_workspace_concurrency: process.env.npm_config_workspace_concurrency ?? '1',
+  // 127.0.0.1 e não localhost: as portas do compose só ouvem em IPv4 local, e o libpq no Windows
+  // perde ~2 s por conexão tentando ::1 primeiro (diagnóstico do Cinzel, regressão final do T08).
+  DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://wsm:wsm@127.0.0.1:5432/wsm',
+  REDIS_URL: process.env.REDIS_URL ?? 'redis://127.0.0.1:6379',
 }
 
 function run(cmd, { quiet = false } = {}) {
