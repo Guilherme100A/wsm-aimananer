@@ -7,6 +7,14 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 
 export default defineConfig({
   root: ROOT,
+  resolve: {
+    // A raiz não depende dos workspaces: os testes importam os pacotes pelo nome (@wsm/...)
+    // e o alias aponta para o fonte de cada pacote (packages/<nome>/src/index.ts, apps/<nome>/src/index.ts).
+    alias: [
+      { find: /^@wsm\/(core|db)$/, replacement: `${ROOT.split('\\').join('/')}packages/$1/src/index.ts` },
+      { find: /^@wsm\/(api|worker)$/, replacement: `${ROOT.split('\\').join('/')}apps/$1/src/index.ts` },
+    ],
+  },
   test: {
     include: ['tests/acceptance/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
