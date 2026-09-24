@@ -26,5 +26,9 @@ export * from './groups'
 export * from './warmup'
 export * from './health'
 
+// T08 — fila de mensagens por sessão (MessageQueue, MessageStore, SessionQueueControl) e ponto único de entrega
+export * from './queue'
+export * from './send/deliver'
+
 // T11 — alertas (ALERT_EVENTS, signWebhookBody, WebhookService, AlertDispatcher)
 export * from './alerts'
